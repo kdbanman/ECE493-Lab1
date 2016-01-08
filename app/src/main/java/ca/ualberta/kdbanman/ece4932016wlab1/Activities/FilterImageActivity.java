@@ -1,9 +1,12 @@
-package ca.ualberta.kdbanman.ece4932016wlab1;
+package ca.ualberta.kdbanman.ece4932016wlab1.Activities;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
+
+import ca.ualberta.kdbanman.ece4932016wlab1.R;
 
 public class FilterImageActivity extends Activity {
 
@@ -29,6 +32,9 @@ public class FilterImageActivity extends Activity {
 
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
+            Intent startSettingsIntent = new Intent(this, SettingsActivity.class);
+            startActivity(startSettingsIntent);
+
             return true;
         }
 

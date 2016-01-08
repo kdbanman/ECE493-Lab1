@@ -9,4 +9,7 @@
     </string-array>
 
     <string name="action_settings">Settings</string>
+    <string name="title_activity_settings">SettingsActivity</string>
+
+    <string name="filter_kernel_size">Filter Kernel Size</string>
 </resources>
