@@ -2,7 +2,7 @@
     <string name="app_name">ECE 493 2016W Lab 1</string>
 
     <string name="filter_image">Filter\nImage</string>
-
+    <string name="image_to_filter">Image to filter.</string>
     <string-array name="filter_names">
         <item>Mean Filter</item>
         <item>Median Filter</item>
