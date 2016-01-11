@@ -12,4 +12,6 @@
     <string name="title_activity_settings">SettingsActivity</string>
 
     <string name="filter_kernel_size">Filter Kernel Size</string>
+
+    <string name="kernel_size_error">Kernel must be positive, odd, and not larger than image.</string>
 </resources>
