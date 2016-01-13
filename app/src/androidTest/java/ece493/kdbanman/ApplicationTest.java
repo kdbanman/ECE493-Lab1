@@ -1,4 +1,4 @@
-package ca.ualberta.kdbanman.ece4932016wlab1;
+package ece493.kdbanman;
 
 import android.app.Application;
 import android.test.ApplicationTestCase;
