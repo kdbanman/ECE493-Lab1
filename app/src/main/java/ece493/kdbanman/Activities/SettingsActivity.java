@@ -5,9 +5,10 @@ import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
 
+import ece493.kdbanman.ObserverActivity;
 import ece493.kdbanman.R;
 
-public class SettingsActivity extends Activity {
+public class SettingsActivity extends ObserverActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -35,5 +36,10 @@ public class SettingsActivity extends Activity {
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    protected void renderViews() {
+
     }
 }
