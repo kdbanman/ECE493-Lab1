@@ -4,7 +4,17 @@ package ece493.kdbanman.Model;
  * A lambda-style callback for processing a kernel-defined neighborhood of pixels.
  * Created by kdbanman on 1/13/16.
  */
-public interface FilterKernel {
+public abstract class FilterKernel {
+
+    private int size = 3;
+
+    public FilterKernel(int size) {
+        this.size = size;
+    }
+
+    public int getSize() {
+        return size;
+    }
 
     /**
      * Process a kernel-defined neighborhood of pixels centered at the row and column passed.
@@ -15,5 +25,5 @@ public interface FilterKernel {
      * @param neighborhood The byte values of the neighborhood.
      * @return The new value of the pixel.
      */
-    byte processNeighborhood(int row, int col, byte[] neighborhood);
+    public abstract byte processNeighborhood(int row, int col, byte[] neighborhood);
 }

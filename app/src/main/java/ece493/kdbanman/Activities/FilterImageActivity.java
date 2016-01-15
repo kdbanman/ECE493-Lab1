@@ -72,7 +72,7 @@ public class FilterImageActivity extends ObserverActivity {
 
         if (imageFilter.isFilterRunning()) {
             progressBarImageFilter.setVisibility(View.VISIBLE);
-            imageView.setAlpha(0.75f);
+            imageView.setAlpha(0.55f);
 
             if (imageFilter.isTaskStopping()) {
                 progressBarImageFilter.setIndeterminateTintMode(PorterDuff.Mode.DST);
@@ -170,7 +170,9 @@ public class FilterImageActivity extends ObserverActivity {
                         }
 
                         InputStream imageStream = getContentResolver().openInputStream(imageUri);
-                        Bitmap newBitmap = BitmapFactory.decodeStream(imageStream);
+                        BitmapFactory.Options options = new BitmapFactory.Options();
+                        options.inMutable = true;
+                        Bitmap newBitmap = BitmapFactory.decodeStream(imageStream, null, options);
 
                         // TODO test for null, throw exception.  probably wrap a bunch of this in setNewBitmap() in Model mutation section
                         if (imageFilter.isFilterRunning()) {

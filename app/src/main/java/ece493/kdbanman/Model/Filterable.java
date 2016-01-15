@@ -39,7 +39,7 @@ public class Filterable extends Observable {
         }
 
         int[] pixels = new int[image.getHeight() * image.getWidth()];
-        image.getPixels(pixels, 0, 0, 0, 0, image.getWidth(), image.getHeight());
+        image.getPixels(pixels, 0, image.getWidth(), 0, 0, image.getWidth(), image.getHeight());
         return pixels;
     }
 
@@ -70,7 +70,7 @@ public class Filterable extends Observable {
             throw new IllegalArgumentException("Filterable.setPixels() must be called with an array of the correct length.");
         }
 
-        image.setPixels(pixels, 0, 0, 0, 0, image.getWidth(), image.getHeight());
+        image.setPixels(pixels, 0, image.getWidth(), 0, 0, image.getWidth(), image.getHeight());
 
         notifyObservers();
     }
@@ -83,24 +83,55 @@ public class Filterable extends Observable {
         return image.getHeight();
     }
 
-    public int[] getProcessedPixels(int neighborhoodSize, FilterKernel filterKernel) {
+    /**
+     * Using a kernel window callback, get a transformed copy of the image's pixels.  Pixels outside
+     * the image are treated as if they had the same value as their nearest edge pixel.
+     *
+     * @param filterKernel The callback that will process the neighborhoods filtered by the kernel.
+     * @return A copy of the pixels as processed by the filterKernel
+     */
+    public int[] getProcessedPixels(FilterKernel filterKernel) {
+        int neighborhoodSize = filterKernel.getSize();
+        if (neighborhoodSize < 3 || neighborhoodSize % 2 == 0) {
+            throw new IllegalArgumentException("Filterable.getProcessedPixels() called with bad neighborhood size.");
+        }
+
         int[] sourcePixels = getPixels();
         int[] targetPixels = new int[sourcePixels.length];
         byte[] neighborhood = new byte[neighborhoodSize * neighborhoodSize];
 
-        int width = image.getWidth();
-        int height = image.getHeight();
-        for (int col = 0; col < image.getWidth(); col++) {
-            for (int row = 0; row < image.getHeight(); row++) {
+        int imageWidth = image.getWidth();
+        int imageHeight = image.getHeight();
+        int neighborhoodRadius = neighborhoodSize / 2;
+        for (int col = 0; col < imageWidth; col++) {
+            for (int row = 0; row < imageHeight; row++) {
+
                 int targetPixel = 0;
-                // TODO:
-                // for each channel (mask)
-                    // for each nbrhood coordinate
-                        // extract byte value into nbrhood using mask
-                    // byte processedPixel = filterKernel.processNeighborhood(row, col, neighborhood);
-                    // shift to align with channel (mask)
-                    // targetPixel |= shifted byte value
-                targetPixels[row * width + col] = targetPixel;
+
+                for (FilterableChannel channel : FilterableChannel.values()) {
+                    // Build neighborhood.
+                    int neigborIndex = 0;
+                    for (int neighborRow = row - neighborhoodRadius; neighborRow < row + neighborhoodRadius; neighborRow++) {
+                        for (int neighborCol = col - neighborhoodRadius; neighborCol < col + neighborhoodRadius; neighborCol++) {
+                            // Clamp neighbor coordinates to within image bounds
+                            neighborRow = neighborRow < 0 ? 0 : neighborRow;
+                            neighborRow = neighborRow >= imageHeight ? imageHeight - 1 : neighborRow;
+
+                            neighborCol = neighborCol < 0 ? 0 : neighborCol;
+                            neighborCol = neighborCol >= imageWidth ? imageWidth - 1 : neighborCol;
+
+                            int sourcePixelColor = sourcePixels[neighborRow * imageWidth + neighborCol];
+                            byte channelColor = channel.getValue(sourcePixelColor);
+                            neighborhood[neigborIndex] = channelColor;
+
+                            neigborIndex++;
+                        }
+                    }
+                    byte filteredChannelPixel = filterKernel.processNeighborhood(row, col, neighborhood);
+                    targetPixel = channel.setValue(filteredChannelPixel, targetPixel);
+                }
+
+                targetPixels[row * imageWidth + col] = targetPixel;
             }
         }
 

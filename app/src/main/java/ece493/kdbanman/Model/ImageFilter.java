@@ -1,8 +1,5 @@
 package ece493.kdbanman.Model;
 
-import android.os.AsyncTask;
-import android.util.Log;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -88,68 +85,24 @@ public class ImageFilter extends Observable {
      * @param image The image to be filtered.
      */
     public void backgroundFilterImage(Filterable image) {
-        BackgroundFilterTask task = new BackgroundFilterTask();
+        if (image == null) {
+            throw new IllegalArgumentException("Image must exist to be filtered.");
+        }
+
+        FilterKernel filterKernel;
+        switch (filterKernelType) {
+            case mean:
+                filterKernel = new MeanFilterKernel(kernelSize);
+                break;
+            case median:
+                filterKernel = new MedianFilterKernel(kernelSize);
+                break;
+            default:
+                throw new IllegalArgumentException("Unrecognized filter kernel type requested in background task.");
+        }
+
+        BackgroundFilterTask task = new BackgroundFilterTask(filterKernel, this);
         backgroundTasks.add(task);
         task.execute(image);
-    }
-
-    /**
-     * Cancellable task wrapping Filterable.getProcessedPixels() that only notifies observers on
-     * the foreground thread.
-     */
-    private class BackgroundFilterTask extends AsyncTask<Filterable, Void, Boolean> {
-
-        private boolean taskRunning;
-        private boolean cancelTask;
-
-        public boolean isTaskRunning() {
-            return taskRunning;
-        }
-
-        public boolean isTaskCancelled() {
-            return cancelTask;
-        }
-
-        public void cancelTask() {
-            this.cancelTask = true;
-        }
-
-        @Override
-        protected void onPreExecute() {
-            super.onPreExecute();
-            Log.v("BackgroundFilterTask", "Task started.");
-
-            taskRunning = true;
-            cancelTask = false;
-            notifyObservers();
-        }
-
-        @Override
-        protected Boolean doInBackground(Filterable... params) {
-            // Do not call notifyObservers() in this method.
-            int j = 0;
-            for (int i = 0; i < 200000; i++) {
-                j = new java.util.Random().nextInt();
-
-                if (cancelTask) {
-                    Log.v("BackgroundFilterTask", "Task cancel flag detected.");
-
-                    cancelTask = false;
-                    return false;
-                }
-            }
-
-            // whether by logic here or within the callack, ensure filterable is not mutated until here
-            return true;
-        }
-
-        @Override
-        protected void onPostExecute(Boolean result) {
-            super.onPostExecute(result);
-            Log.v("BackgroundFilterTask", "Task done with result " + result);
-
-            taskRunning = false;
-            notifyObservers();
-        }
     }
 }
