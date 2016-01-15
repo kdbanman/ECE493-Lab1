@@ -1,5 +1,11 @@
 package ece493.kdbanman.Model;
 
+import android.os.AsyncTask;
+import android.util.Log;
+
+import java.util.ArrayList;
+import java.util.List;
+
 import ece493.kdbanman.Observable;
 
 /**
@@ -10,29 +16,34 @@ import ece493.kdbanman.Observable;
  */
 public class ImageFilter extends Observable {
 
-    private int kernelSize;
+    private int kernelSize = 3;
 
     private FilterKernelType filterKernelType = FilterKernelType.mean;
 
-    private boolean filterRunning = false;
-
-    /**
-     * Calls notifyObservers().
-     * @param isRunning New running state.
-     */
-    private void setFilterRunning(boolean isRunning) {
-        filterRunning = isRunning;
-        notifyObservers();
-    }
+    private List<BackgroundFilterTask> backgroundTasks = new ArrayList<>();
 
     public boolean isFilterRunning() {
-        return filterRunning;
+        for (BackgroundFilterTask task : backgroundTasks) {
+            if (task.isTaskRunning()) {
+                return true;
+            }
+        }
+        return false;
     }
 
-    public void cancelBackgroundFilterTask() {
-        //TODO
+    public boolean isTaskStopping() {
+        for (BackgroundFilterTask task : backgroundTasks) {
+            if (task.isTaskRunning() && task.isTaskCancelled()) {
+                return true;
+            }
+        }
+        return false;
+    }
 
-        notifyObservers();
+    public void cancelBackgroundFilterTasks() {
+        for (BackgroundFilterTask task : backgroundTasks) {
+            task.cancelTask();
+        }
     }
 
     public void setKernelType(FilterKernelType type) {
@@ -44,6 +55,7 @@ public class ImageFilter extends Observable {
     public FilterKernelType getKernelType() {
         return filterKernelType;
     }
+
     /**
      * @return The edge length in pixels for the square convolution window.
      */
@@ -76,7 +88,68 @@ public class ImageFilter extends Observable {
      * @param image The image to be filtered.
      */
     public void backgroundFilterImage(Filterable image) {
-        setFilterRunning(true);
-        // TODO cancellable task wrapping Filterable.processPixels() or whatever, remember setFilterRunning()
+        BackgroundFilterTask task = new BackgroundFilterTask();
+        backgroundTasks.add(task);
+        task.execute(image);
+    }
+
+    /**
+     * Cancellable task wrapping Filterable.getProcessedPixels() that only notifies observers on
+     * the foreground thread.
+     */
+    private class BackgroundFilterTask extends AsyncTask<Filterable, Void, Boolean> {
+
+        private boolean taskRunning;
+        private boolean cancelTask;
+
+        public boolean isTaskRunning() {
+            return taskRunning;
+        }
+
+        public boolean isTaskCancelled() {
+            return cancelTask;
+        }
+
+        public void cancelTask() {
+            this.cancelTask = true;
+        }
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+            Log.v("BackgroundFilterTask", "Task started.");
+
+            taskRunning = true;
+            cancelTask = false;
+            notifyObservers();
+        }
+
+        @Override
+        protected Boolean doInBackground(Filterable... params) {
+            // Do not call notifyObservers() in this method.
+            int j = 0;
+            for (int i = 0; i < 200000; i++) {
+                j = new java.util.Random().nextInt();
+
+                if (cancelTask) {
+                    Log.v("BackgroundFilterTask", "Task cancel flag detected.");
+
+                    cancelTask = false;
+                    return false;
+                }
+            }
+
+            // whether by logic here or within the callack, ensure filterable is not mutated until here
+            return true;
+        }
+
+        @Override
+        protected void onPostExecute(Boolean result) {
+            super.onPostExecute(result);
+            Log.v("BackgroundFilterTask", "Task done with result " + result);
+
+            taskRunning = false;
+            notifyObservers();
+        }
     }
 }

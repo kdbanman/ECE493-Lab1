@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.PorterDuff;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
@@ -16,6 +17,7 @@ import android.view.View;
 import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.ProgressBar;
 import android.widget.Spinner;
 import android.widget.Toast;
 
@@ -33,6 +35,7 @@ public class FilterImageActivity extends ObserverActivity {
     private ImageView imageView;
     private Button filterImageButton;
     private Spinner filterChooserSpinner;
+    private ProgressBar progressBarImageFilter;
 
     private static final int REQUEST_CODE_IMAGE_URI = 0,
         REQUEST_CODE_READ_STORAGE = 1;
@@ -50,12 +53,8 @@ public class FilterImageActivity extends ObserverActivity {
             int width = imageView.getWidth();
             int height = imageView.getHeight();
             imageView.setImageBitmap(image.getScaledCopy(height, width));
-
-            filterImageButton.setEnabled(true);
         } else {
             imageView.setImageResource(R.drawable.placeholder);
-
-            filterImageButton.setEnabled(false);
         }
 
         switch (imageFilter.getKernelType()) {
@@ -69,6 +68,22 @@ public class FilterImageActivity extends ObserverActivity {
             default:
                 Toast.makeText(this, "Unrecognized filter type sent to view.", Toast.LENGTH_LONG).show();
                 break;
+        }
+
+        if (imageFilter.isFilterRunning()) {
+            progressBarImageFilter.setVisibility(View.VISIBLE);
+            imageView.setAlpha(0.75f);
+
+            if (imageFilter.isTaskStopping()) {
+                progressBarImageFilter.setIndeterminateTintMode(PorterDuff.Mode.DST);
+                progressBarImageFilter.getIndeterminateDrawable().setColorFilter(0xFFFF0000, PorterDuff.Mode.MULTIPLY);
+            } else {
+                progressBarImageFilter.setIndeterminateTintMode(PorterDuff.Mode.SRC_ATOP);
+                progressBarImageFilter.getIndeterminateDrawable().setColorFilter(0xFF006600, PorterDuff.Mode.MULTIPLY);
+            }
+        } else {
+            progressBarImageFilter.setVisibility(View.GONE);
+            imageView.setAlpha(1f);
         }
     }
 
@@ -86,7 +101,18 @@ public class FilterImageActivity extends ObserverActivity {
         imageView = (ImageView) findViewById(R.id.imageView);
         filterImageButton = (Button) findViewById(R.id.buttonFilterImage);
         filterChooserSpinner = (Spinner) findViewById(R.id.spinnerFilterChooser);
+        progressBarImageFilter = (ProgressBar) findViewById(R.id.progressBarImageFilter);
 
+        filterImageButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (imageFilter.isFilterRunning()) {
+                    imageFilter.cancelBackgroundFilterTasks();
+                }
+
+                imageFilter.backgroundFilterImage(image);
+            }
+        });
         filterChooserSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
@@ -147,7 +173,9 @@ public class FilterImageActivity extends ObserverActivity {
                         Bitmap newBitmap = BitmapFactory.decodeStream(imageStream);
 
                         // TODO test for null, throw exception.  probably wrap a bunch of this in setNewBitmap() in Model mutation section
-                        imageFilter.cancelBackgroundFilterTask();
+                        if (imageFilter.isFilterRunning()) {
+                            imageFilter.cancelBackgroundFilterTasks();
+                        }
                         image.setImage(newBitmap);
 
                     } else {
