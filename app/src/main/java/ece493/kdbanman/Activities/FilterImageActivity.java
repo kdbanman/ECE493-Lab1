@@ -1,15 +1,27 @@
 package ece493.kdbanman.Activities;
 
+import android.Manifest;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+import android.widget.AdapterView;
+import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.Spinner;
 import android.widget.Toast;
 
+import java.io.InputStream;
+
+import ece493.kdbanman.Model.FilterKernelType;
 import ece493.kdbanman.Model.Filterable;
 import ece493.kdbanman.Model.ImageFilter;
 import ece493.kdbanman.Model.ModelServer;
@@ -18,18 +30,45 @@ import ece493.kdbanman.R;
 
 public class FilterImageActivity extends ObserverActivity {
 
-    private static final int REQUEST_CODE_IMAGE_URI = 0;
+    private ImageView imageView;
+    private Button filterImageButton;
+    private Spinner filterChooserSpinner;
+
+    private static final int REQUEST_CODE_IMAGE_URI = 0,
+        REQUEST_CODE_READ_STORAGE = 1;
 
     private Filterable image;
     private ImageFilter imageFilter;
 
     @Override
     protected void renderViews() {
+        if (imageView == null || filterChooserSpinner == null || filterImageButton == null) {
+            return;
+        }
+
         if (image.hasImage()) {
-            ImageView imageView = (ImageView) findViewById(R.id.imageView);
-            int width = imageView.getMaxWidth();
-            int height = imageView.getMaxHeight();
+            int width = imageView.getWidth();
+            int height = imageView.getHeight();
             imageView.setImageBitmap(image.getScaledCopy(height, width));
+
+            filterImageButton.setEnabled(true);
+        } else {
+            imageView.setImageResource(R.drawable.placeholder);
+
+            filterImageButton.setEnabled(false);
+        }
+
+        switch (imageFilter.getKernelType()) {
+            case mean:
+                filterChooserSpinner.setSelection(0);
+                break;
+            case median:
+                filterChooserSpinner.setSelection(1);
+                break;
+
+            default:
+                Toast.makeText(this, "Unrecognized filter type sent to view.", Toast.LENGTH_LONG).show();
+                break;
         }
     }
 
@@ -43,6 +82,41 @@ public class FilterImageActivity extends ObserverActivity {
 
         image = ModelServer.getInstance().getFilterable(this);
         imageFilter = ModelServer.getInstance().getImageFilter(this);
+
+        imageView = (ImageView) findViewById(R.id.imageView);
+        filterImageButton = (Button) findViewById(R.id.buttonFilterImage);
+        filterChooserSpinner = (Spinner) findViewById(R.id.spinnerFilterChooser);
+
+        filterChooserSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                switch (position) {
+                    case (0):
+                        imageFilter.setKernelType(FilterKernelType.mean);
+                        break;
+                    case (1):
+                        imageFilter.setKernelType(FilterKernelType.median);
+                        break;
+                    default:
+                        Toast.makeText(FilterImageActivity.this, "Unrecognized filter type sent from view.", Toast.LENGTH_LONG).show();
+                        break;
+                }
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+                imageFilter.setKernelType(FilterKernelType.mean);
+            }
+        });
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE)
+                != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, REQUEST_CODE_READ_STORAGE);
+        }
     }
 
     @Override
@@ -53,20 +127,35 @@ public class FilterImageActivity extends ObserverActivity {
     }
 
     @Override
-    public void onActivityResult(int requestCode, int resultcode, Intent data) {
-        super.onActivityResult(requestCode, resultcode, data);
+    public void onActivityResult(int requestCode, int resultcode, Intent returnedIntent) {
+        super.onActivityResult(requestCode, resultcode, returnedIntent);
 
-        // from http://stackoverflow.com/a/16930842
+        // from http://stackoverflow.com/a/9745454
         if (requestCode == REQUEST_CODE_IMAGE_URI) {
-            if (data != null && data.getData() != null && data.getData().getPath() != null) {
-                Bitmap newBitmap = BitmapFactory.decodeFile(data.getData().getPath());
+            if (resultcode == RESULT_OK) {
+                try {
+                    if (returnedIntent != null && returnedIntent.getData() != null && returnedIntent.getData().getPath() != null) {
+                        Uri imageUri = returnedIntent.getData();
 
-                // TODO test for null, throw exception.  probably wrap a bunch of this in setNewBitmap() in Model mutation section
-                imageFilter.cancelBackgroundFilterTask();
-                image.setImage(newBitmap);
+                        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE)
+                                != PackageManager.PERMISSION_GRANTED) {
+                            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, REQUEST_CODE_READ_STORAGE);
+                            throw new Exception("Access to external storage must be granted before images may be loaded.");
+                        }
 
-            } else {
-                Toast.makeText(this, R.string.error_no_image_path, Toast.LENGTH_LONG).show();
+                        InputStream imageStream = getContentResolver().openInputStream(imageUri);
+                        Bitmap newBitmap = BitmapFactory.decodeStream(imageStream);
+
+                        // TODO test for null, throw exception.  probably wrap a bunch of this in setNewBitmap() in Model mutation section
+                        imageFilter.cancelBackgroundFilterTask();
+                        image.setImage(newBitmap);
+
+                    } else {
+                        throw new IllegalArgumentException(getString(R.string.error_no_image_path));
+                    }
+                } catch (Exception e) {
+                    Toast.makeText(this, e.getMessage(), Toast.LENGTH_LONG).show();
+                }
             }
         }
     }

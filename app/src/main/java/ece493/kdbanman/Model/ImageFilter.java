@@ -12,7 +12,7 @@ public class ImageFilter extends Observable {
 
     private int kernelSize;
 
-    private FilterKernelType filterKernelType;
+    private FilterKernelType filterKernelType = FilterKernelType.mean;
 
     private boolean filterRunning = false;
 

@@ -15,6 +15,13 @@ public abstract class ObserverActivity extends Activity implements Observer {
         renderViews();
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+        renderViews();
+    }
+
     protected abstract void renderViews();
 
 }

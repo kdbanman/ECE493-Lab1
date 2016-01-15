@@ -12,7 +12,6 @@
         android:layout_alignParentTop="true"
         android:layout_alignParentStart="true"
         android:layout_alignParentEnd="true"
-        android:background="@drawable/placeholder"
         android:cropToPadding="false"
         android:scaleType="fitCenter"
         android:contentDescription="@string/image_to_filter"
