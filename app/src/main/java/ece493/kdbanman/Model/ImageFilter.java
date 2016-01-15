@@ -15,9 +15,11 @@ public class ImageFilter extends Observable {
 
     private int kernelSize = 3;
 
-    private FilterKernelType filterKernelType = FilterKernelType.mean;
+    private FilterKernelType filterKernelType = FilterKernelType.MEAN;
 
     private List<BackgroundFilterTask> backgroundTasks = new ArrayList<>();
+
+    protected ImageFilter() {}
 
     public boolean isFilterRunning() {
         for (BackgroundFilterTask task : backgroundTasks) {
@@ -91,10 +93,10 @@ public class ImageFilter extends Observable {
 
         FilterKernel filterKernel;
         switch (filterKernelType) {
-            case mean:
+            case MEAN:
                 filterKernel = new MeanFilterKernel(kernelSize);
                 break;
-            case median:
+            case MEDIAN:
                 filterKernel = new MedianFilterKernel(kernelSize);
                 break;
             default:

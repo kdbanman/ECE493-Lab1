@@ -53,15 +53,17 @@ public class FilterImageActivity extends ObserverActivity {
             int width = imageView.getWidth();
             int height = imageView.getHeight();
             imageView.setImageBitmap(image.getScaledCopy(height, width));
+            filterImageButton.setEnabled(true);
         } else {
             imageView.setImageResource(R.drawable.placeholder);
+            filterImageButton.setEnabled(false);
         }
 
         switch (imageFilter.getKernelType()) {
-            case mean:
+            case MEAN:
                 filterChooserSpinner.setSelection(0);
                 break;
-            case median:
+            case MEDIAN:
                 filterChooserSpinner.setSelection(1);
                 break;
 
@@ -118,10 +120,10 @@ public class FilterImageActivity extends ObserverActivity {
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
                 switch (position) {
                     case (0):
-                        imageFilter.setKernelType(FilterKernelType.mean);
+                        imageFilter.setKernelType(FilterKernelType.MEAN);
                         break;
                     case (1):
-                        imageFilter.setKernelType(FilterKernelType.median);
+                        imageFilter.setKernelType(FilterKernelType.MEDIAN);
                         break;
                     default:
                         Toast.makeText(FilterImageActivity.this, "Unrecognized filter type sent from view.", Toast.LENGTH_LONG).show();
@@ -131,7 +133,7 @@ public class FilterImageActivity extends ObserverActivity {
 
             @Override
             public void onNothingSelected(AdapterView<?> parent) {
-                imageFilter.setKernelType(FilterKernelType.mean);
+                imageFilter.setKernelType(FilterKernelType.MEAN);
             }
         });
     }

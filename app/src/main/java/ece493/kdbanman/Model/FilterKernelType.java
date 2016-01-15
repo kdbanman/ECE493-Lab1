@@ -6,5 +6,5 @@ package ece493.kdbanman.Model;
  * Created by kdbanman on 1/13/16.
  */
 public enum FilterKernelType {
-    mean, median
+    MEAN, MEDIAN
 }

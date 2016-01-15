@@ -3,17 +3,15 @@ package ece493.kdbanman.Model;
 import android.os.AsyncTask;
 import android.util.Log;
 
-import ece493.kdbanman.Model.FilterKernel;
-import ece493.kdbanman.Model.Filterable;
 import ece493.kdbanman.Observable;
 
 /**
- * Cancellable task wrapping Filterable.getProcessedPixels() that only notifies observers on
+ * Cancellable task wrapping Filterable.applyFilter() that only notifies observers on
  * the foreground thread.
  *
  * Created by kdbanman on 1/15/16.
  */
-public class BackgroundFilterTask extends AsyncTask<Filterable, Void, int[]> {
+class BackgroundFilterTask extends AsyncTask<Filterable, Void, int[]> {
 
     private boolean taskRunning;
     private boolean cancelTask;
@@ -57,7 +55,7 @@ public class BackgroundFilterTask extends AsyncTask<Filterable, Void, int[]> {
         // Do not call notifyObservers() directly or indirectly in this method.
         try {
             image = params[0];
-            filteredPixels = params[0].getProcessedPixels(filterKernel);
+            filteredPixels = params[0].applyFilter(filterKernel);
 
             return filteredPixels;
         } catch (Exception e) {

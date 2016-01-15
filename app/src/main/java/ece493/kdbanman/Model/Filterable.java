@@ -13,10 +13,12 @@ import ece493.kdbanman.Observable;
  */
 public class Filterable extends Observable {
 
-    // =================
-    // Private
-
     private Bitmap image;
+
+    protected Filterable() {}
+
+    // =================
+    // Private Methods
 
     private Size computeScaleDimensions(int maxHeight, int maxWidth) {
         double imageAspectRatio = (double)image.getWidth() / (double)image.getHeight();
@@ -44,7 +46,7 @@ public class Filterable extends Observable {
     }
 
     // ===================
-    // Public
+    // Public Methods
 
     public Bitmap getScaledCopy(int maxHeight, int maxWidth) {
         if (image == null) {
@@ -90,10 +92,10 @@ public class Filterable extends Observable {
      * @param filterKernel The callback that will process the neighborhoods filtered by the kernel.
      * @return A copy of the pixels as processed by the filterKernel
      */
-    public int[] getProcessedPixels(FilterKernel filterKernel) {
+    public int[] applyFilter(FilterKernel filterKernel) {
         int neighborhoodSize = filterKernel.getSize();
         if (neighborhoodSize < 3 || neighborhoodSize % 2 == 0) {
-            throw new IllegalArgumentException("Filterable.getProcessedPixels() called with bad neighborhood size.");
+            throw new IllegalArgumentException("Filterable.applyFilter() called with bad neighborhood size.");
         }
 
         int[] sourcePixels = getPixels();
@@ -127,7 +129,7 @@ public class Filterable extends Observable {
                             neigborIndex++;
                         }
                     }
-                    byte filteredChannelPixel = filterKernel.processNeighborhood(row, col, neighborhood);
+                    byte filteredChannelPixel = filterKernel.processNeighborhood(neighborhood);
                     targetPixel = channel.setValue(filteredChannelPixel, targetPixel);
                 }
 
