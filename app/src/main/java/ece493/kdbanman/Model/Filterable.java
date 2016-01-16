@@ -59,6 +59,10 @@ public class Filterable extends Observable {
     }
 
     public void setImage(Bitmap image) {
+        if (this.image != null && !this.image.isRecycled()) {
+            this.image.recycle();
+        }
+
         this.image = image;
 
         notifyObservers();

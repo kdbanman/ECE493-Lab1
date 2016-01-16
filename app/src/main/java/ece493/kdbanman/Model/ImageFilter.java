@@ -21,6 +21,17 @@ public class ImageFilter extends Observable {
 
     protected ImageFilter() {}
 
+    private void purgeOldTasks() {
+        List<BackgroundFilterTask> toRemove = new ArrayList<>();
+        for (BackgroundFilterTask task : backgroundTasks) {
+            if (task.isTaskComplete()) {
+                toRemove.add(task);
+            }
+        }
+
+        backgroundTasks.removeAll(toRemove);
+    }
+
     public boolean isFilterRunning() {
         for (BackgroundFilterTask task : backgroundTasks) {
             if (task.isTaskRunning()) {
@@ -87,6 +98,8 @@ public class ImageFilter extends Observable {
      * @param image The image to be filtered.
      */
     public void backgroundFilterImage(Filterable image) {
+        purgeOldTasks();
+
         if (image == null) {
             throw new IllegalArgumentException("Image must exist to be filtered.");
         }
@@ -105,6 +118,8 @@ public class ImageFilter extends Observable {
 
         BackgroundFilterTask task = new BackgroundFilterTask(filterKernel, this);
         backgroundTasks.add(task);
+
+
         task.execute(image);
     }
 }

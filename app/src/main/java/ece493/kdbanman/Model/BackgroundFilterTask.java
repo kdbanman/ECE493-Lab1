@@ -15,6 +15,7 @@ class BackgroundFilterTask extends AsyncTask<Filterable, Void, int[]> {
 
     private boolean taskRunning;
     private boolean cancelTask;
+    private boolean taskComplete;
 
     private FilterKernel filterKernel;
 
@@ -36,6 +37,8 @@ class BackgroundFilterTask extends AsyncTask<Filterable, Void, int[]> {
         return cancelTask;
     }
 
+    public boolean isTaskComplete() { return taskComplete; }
+
     public void cancelTask() {
         this.cancelTask = true;
     }
@@ -47,6 +50,7 @@ class BackgroundFilterTask extends AsyncTask<Filterable, Void, int[]> {
 
         taskRunning = true;
         cancelTask = false;
+        taskComplete = false;
         indirectObservable.notifyObservers();
     }
 
@@ -55,9 +59,12 @@ class BackgroundFilterTask extends AsyncTask<Filterable, Void, int[]> {
         // Do not call notifyObservers() directly or indirectly in this method.
         try {
             image = params[0];
-            filteredPixels = params[0].applyFilter(filterKernel);
+            filteredPixels = image.applyFilter(filterKernel);
 
             return filteredPixels;
+        } catch (OutOfMemoryError e) {
+            Log.e("BackgroundFilterTask", "Insufficient memory to filter image.");
+            return null;
         } catch (Exception e) {
             Log.e("BackgroundFilterTask", e.toString());
             return null;
@@ -74,6 +81,7 @@ class BackgroundFilterTask extends AsyncTask<Filterable, Void, int[]> {
         }
 
         taskRunning = false;
+        taskComplete = true;
         indirectObservable.notifyObservers();
     }
 }
