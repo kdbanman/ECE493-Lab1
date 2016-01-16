@@ -6,8 +6,8 @@ import java.util.List;
 import ece493.kdbanman.Observable;
 
 /**
- * Implementation of the logic and state that is common to kernel-based convolution
- * filters.  Works with the Filterable class and FilterKernel interface.
+ * Logic and state that is to run kernel-based convolution filters on a background thread.
+ * Works with the Filterable class and FilterKernel interface.
  *
  * Created by kdbanman on 1/13/16.
  */

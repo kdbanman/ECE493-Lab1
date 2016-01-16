@@ -11,6 +11,7 @@ import android.os.Bundle;
 import android.provider.MediaStore;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -46,6 +47,7 @@ public class FilterImageActivity extends ObserverActivity {
     @Override
     protected void renderViews() {
         if (imageView == null || filterChooserSpinner == null || filterImageButton == null) {
+            Log.w("FilterImageActivity", "renderViews() called before views initialized.");
             return;
         }
 

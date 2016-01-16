@@ -15,7 +15,8 @@
         android:cropToPadding="false"
         android:scaleType="fitCenter"
         android:contentDescription="@string/image_to_filter"
-        android:layout_above="@+id/relativeLayout" />
+        android:layout_above="@+id/relativeLayout"
+        android:adjustViewBounds="false" />
 
     <RelativeLayout
         android:layout_width="fill_parent"
