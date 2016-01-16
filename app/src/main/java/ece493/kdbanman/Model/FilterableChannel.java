@@ -23,11 +23,21 @@ enum FilterableChannel {
     }
 
     public byte getValue(int color) {
-        return (byte)((color & colorMask) >> bitDisplacement);
+        int masked = color & colorMask;
+        int shifted = masked >>> bitDisplacement;
+        byte casted = (byte)shifted;
+        return casted;
     }
 
     public int setValue(byte value, int color) {
-        color &= ~colorMask;
-        return color | (((int)value) << bitDisplacement);
+        int castedValue = (int)value & 0xFF;
+        int shiftedValue = castedValue << bitDisplacement;
+
+        int inverseMask = ~colorMask;
+        int clearedColor = color & inverseMask;
+
+        int newColor = clearedColor | shiftedValue;
+
+        return newColor;
     }
 }

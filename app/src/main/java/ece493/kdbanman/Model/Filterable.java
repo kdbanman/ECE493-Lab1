@@ -112,21 +112,18 @@ public class Filterable extends Observable {
 
                 for (FilterableChannel channel : FilterableChannel.values()) {
                     // Build neighborhood.
-                    int neigborIndex = 0;
-                    for (int neighborRow = row - neighborhoodRadius; neighborRow < row + neighborhoodRadius; neighborRow++) {
-                        for (int neighborCol = col - neighborhoodRadius; neighborCol < col + neighborhoodRadius; neighborCol++) {
+                    int neighborIndex = 0;
+                    for (int neighborRow = row - neighborhoodRadius; neighborRow <= row + neighborhoodRadius; neighborRow++) {
+                        for (int neighborCol = col - neighborhoodRadius; neighborCol <= col + neighborhoodRadius; neighborCol++) {
                             // Clamp neighbor coordinates to within image bounds
-                            neighborRow = neighborRow < 0 ? 0 : neighborRow;
-                            neighborRow = neighborRow >= imageHeight ? imageHeight - 1 : neighborRow;
+                            int clampedRow = Math.min(imageHeight - 1, Math.max(0, neighborRow));
+                            int clampedCol = Math.min(imageWidth - 1, Math.max(0, neighborCol));
 
-                            neighborCol = neighborCol < 0 ? 0 : neighborCol;
-                            neighborCol = neighborCol >= imageWidth ? imageWidth - 1 : neighborCol;
-
-                            int sourcePixelColor = sourcePixels[neighborRow * imageWidth + neighborCol];
+                            int sourcePixelColor = sourcePixels[clampedRow * imageWidth + clampedCol];
                             byte channelColor = channel.getValue(sourcePixelColor);
-                            neighborhood[neigborIndex] = channelColor;
+                            neighborhood[neighborIndex] = channelColor;
 
-                            neigborIndex++;
+                            neighborIndex++;
                         }
                     }
                     byte filteredChannelPixel = filterKernel.processNeighborhood(neighborhood);
