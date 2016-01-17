@@ -1,6 +1,7 @@
 package ece493.kdbanman.Activities;
 
 import android.os.Bundle;
+import android.os.Handler;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
@@ -10,6 +11,7 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import ece493.kdbanman.Model.Filterable;
 import ece493.kdbanman.Model.ImageFilter;
 import ece493.kdbanman.Model.ModelServer;
 import ece493.kdbanman.ObserverActivity;
@@ -20,9 +22,10 @@ public class SettingsActivity extends ObserverActivity {
     TextView kernelSizeTextView;
     EditText kernelSizeEditText;
 
+    Filterable image;
     ImageFilter imageFilter;
 
-    Toast badKernelToast;
+    boolean badKernelSize;
 
     @Override
     protected void renderViews() {
@@ -32,6 +35,7 @@ public class SettingsActivity extends ObserverActivity {
         }
 
         kernelSizeTextView.setText(Integer.toString(imageFilter.getKernelSize()));
+        kernelSizeEditText.setTextColor((0xFF000000));
     }
 
     @Override
@@ -40,8 +44,9 @@ public class SettingsActivity extends ObserverActivity {
         setContentView(R.layout.activity_settings);
 
         imageFilter = ModelServer.getInstance().getImageFilter(this);
+        image = ModelServer.getInstance().getFilterable(this);
 
-        badKernelToast = Toast.makeText(this, R.string.kernel_size_error, Toast.LENGTH_SHORT);
+        badKernelSize = false;
 
         kernelSizeTextView = (TextView) findViewById(R.id.textViewReadOnlyKernelSize);
         kernelSizeEditText = (EditText) findViewById(R.id.editTextKernelSize);
@@ -49,26 +54,38 @@ public class SettingsActivity extends ObserverActivity {
         kernelSizeEditText.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-
+                return;
             }
 
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
+                if (s.length() == 0) {
+                    return;
+                }
+
                 try {
                     int kernelSize = Integer.parseInt(s.toString());
+
+                    if (image.hasImage() && kernelSize > Math.min(image.getWidth(), image.getHeight())) {
+                        throw new IllegalArgumentException();
+                    }
                     imageFilter.setKernelSize(kernelSize);
-                    badKernelToast.cancel();
+                    badKernelSize = false;
                 } catch (NumberFormatException e) {
-                    badKernelToast.show();
                     Log.w("SettingsActivity", "Kernel size input was not an integer.");
+                    badKernelSize = true;
+                    kernelSizeEditText.setTextColor(0xFFFF0000);
+                    queueBadKernelSizeToast();
                 } catch (IllegalArgumentException e) {
-                    badKernelToast.show();
+                    badKernelSize = true;
+                    kernelSizeEditText.setTextColor(0xFFFF0000);
+                    queueBadKernelSizeToast();
                 }
             }
 
             @Override
             public void afterTextChanged(Editable s) {
-
+                return;
             }
         });
     }
@@ -93,5 +110,16 @@ public class SettingsActivity extends ObserverActivity {
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    private void queueBadKernelSizeToast() {
+        new Handler().postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                if (badKernelSize) {
+                    Toast.makeText(SettingsActivity.this, R.string.kernel_size_error, Toast.LENGTH_SHORT).show();
+                }
+            }
+        }, 1500);
     }
 }

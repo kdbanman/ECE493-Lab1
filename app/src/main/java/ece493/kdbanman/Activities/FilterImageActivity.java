@@ -192,6 +192,7 @@ public class FilterImageActivity extends ObserverActivity {
         return true;
     }
 
+    // Currently used only to process image selection from filesystem.
     @Override
     public void onActivityResult(int requestCode, int resultcode, Intent returnedIntent) {
         super.onActivityResult(requestCode, resultcode, returnedIntent);
@@ -218,12 +219,22 @@ public class FilterImageActivity extends ObserverActivity {
                             throw new IllegalArgumentException(getString(R.string.no_image_error));
                         }
 
-                        // TODO test for null, throw exception.  probably wrap a bunch of this in setNewBitmap() in Model mutation section
+                        // TODO wrap a bunch of this in setNewBitmap() in Model mutation section
                         if (imageFilter.isFilterRunning()) {
                             imageFilter.cancelBackgroundFilterTasks();
                         }
                         image.setImage(newBitmap);
 
+                        if (imageFilter.getKernelSize() > Math.min(image.getWidth(), image.getHeight())) {
+                            int shrunkKernelSize = Math.min(image.getWidth(), image.getHeight());
+                            shrunkKernelSize = Math.max(3, shrunkKernelSize - 1);
+                            if (shrunkKernelSize % 2 == 0) {
+                                shrunkKernelSize -= 1;
+                            }
+
+                            imageFilter.setKernelSize(shrunkKernelSize);
+                            Toast.makeText(this, R.string.kernel_size_shrunk, Toast.LENGTH_LONG).show();
+                        }
                     } else {
                         throw new IllegalArgumentException(getString(R.string.no_image_error));
                     }

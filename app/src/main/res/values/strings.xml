@@ -19,4 +19,5 @@
     <string name="stopping_filter_message">Stopping filter tasks...</string>
     <string name="unrecognized_filter_from_view">Unrecognized filter type sent from view.</string>
     <string name="cancel_filter">Cancel</string>
+    <string name="kernel_size_shrunk">Kernel size has been shrunk to match image dimensions.</string>
 </resources>
