@@ -18,6 +18,7 @@ public class ImageFilter extends Observable {
     private FilterKernelType filterKernelType = FilterKernelType.MEAN;
 
     private List<BackgroundFilterTask> backgroundTasks = new ArrayList<>();
+    private int taskProgress;
 
     protected ImageFilter() {}
 
@@ -39,6 +40,14 @@ public class ImageFilter extends Observable {
             }
         }
         return false;
+    }
+
+    public int getTaskProgress() {
+        int minProgress = 100;
+        for (BackgroundFilterTask task : backgroundTasks) {
+            minProgress = Math.min(minProgress, task.getProgress());
+        }
+        return minProgress;
     }
 
     public boolean isTaskStopping() {

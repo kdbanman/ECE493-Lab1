@@ -96,7 +96,7 @@ public class Filterable extends Observable {
      * @param filterKernel The callback that will process the neighborhoods filtered by the kernel.
      * @return A copy of the pixels as processed by the filterKernel
      */
-    public int[] applyFilter(FilterKernel filterKernel) {
+    public int[] applyFilter(FilterKernel filterKernel, CancellableProgressCallback progressCallback) {
         int neighborhoodSize = filterKernel.getSize();
         if (neighborhoodSize < 3 || neighborhoodSize % 2 == 0) {
             throw new IllegalArgumentException("Filterable.applyFilter() called with bad neighborhood size.");
@@ -136,6 +136,11 @@ public class Filterable extends Observable {
 
                 targetPixels[row * imageWidth + col] = targetPixel;
             }
+
+            if (progressCallback.isCancelled()) {
+                return null;
+            }
+            progressCallback.onProgressUpdate((100 * col) / imageWidth);
         }
 
         return targetPixels;

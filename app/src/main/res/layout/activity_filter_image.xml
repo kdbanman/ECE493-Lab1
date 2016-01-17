@@ -32,7 +32,10 @@
             android:entries="@array/filter_names"
             android:layout_alignParentTop="true"
             android:layout_alignParentStart="true"
-            android:layout_toStartOf="@+id/buttonFilterImage" />
+            android:layout_toStartOf="@+id/buttonFilterImage"
+            android:layout_alignParentBottom="false"
+            android:layout_alignTop="@+id/buttonFilterImage"
+            android:layout_alignBottom="@+id/buttonFilterImage" />
 
         <Button
             android:layout_width="wrap_content"
@@ -55,5 +58,23 @@
         android:layout_marginTop="184dp"
         android:indeterminate="true"
         android:indeterminateBehavior="cycle" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceSmall"
+        android:id="@+id/textViewFilterStatus"
+        android:layout_centerHorizontal="true"
+        android:textAlignment="center"
+        android:layout_below="@+id/progressBarImageFilter" />
+
+    <Button
+        style="?android:attr/buttonStyleSmall"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/cancel_filter"
+        android:id="@+id/button"
+        android:layout_below="@+id/textViewFilterStatus"
+        android:layout_centerHorizontal="true" />
 
 </RelativeLayout>

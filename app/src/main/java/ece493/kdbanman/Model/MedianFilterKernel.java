@@ -1,5 +1,6 @@
 package ece493.kdbanman.Model;
 
+import java.util.Arrays;
 import java.util.Random;
 
 /**
@@ -10,80 +11,30 @@ import java.util.Random;
  */
 class MedianFilterKernel extends FilterKernel {
 
+    // Java bytes are signed, but the values extracted from the colors are not.  This array is used
+    // to convert the bytes into positive integers for correct sorting order.
+    private int[] sortableByteValues;
+
     private Random random = new Random();
 
-    public MedianFilterKernel(int size) { super(size); }
+    public MedianFilterKernel(int size) {
+        super(size);
+
+        sortableByteValues = new int[size * size];
+    }
 
     @Override
     public byte processNeighborhood(byte[] neighborhood) {
-        return getMedian(neighborhood);
-    }
-
-    private byte getMedian(byte[] bytes) {
-        return selectMedian(bytes, 0, bytes.length - 1);
-    }
-
-    /**
-     * Select the median of an array using Hoare's recursive method (see: quicksort), treating bytes
-     * as if they were unsigned.
-     *
-     * @param bytes The array to select from.
-     * @param leftBound The left index of the space to select from.
-     * @param rightBound The right index of the space to select from.
-     * @return The value of the median.
-     */
-    private byte selectMedian(byte[] bytes, int leftBound, int rightBound) {
-        if (leftBound == rightBound) {
-            return bytes[leftBound];
-        }
-        int pivotIndex = random.nextInt(rightBound - leftBound) + leftBound;
-        pivotIndex = partition(bytes, leftBound, rightBound, pivotIndex);
-
-        if (pivotIndex == bytes.length / 2) {
-            return bytes[pivotIndex];
-        }
-        else if (pivotIndex > bytes.length / 2) {
-            return selectMedian(bytes, leftBound, pivotIndex - 1);
-        }
-        else {
-            return selectMedian(bytes, pivotIndex + 1, rightBound);
-        }
-    }
-
-    /**
-     * Partition an array of bytes about the pivot into greater and lesser elements, treating bytes
-     * as if they were unsigned.
-     *
-     * @param bytes The array to partition.
-     * @param leftBound The left index of the space to partition.
-     * @param rightBound The right index of the space to partition.
-     * @param pivotIndex The index about which to partition.
-     * @return The "sorted position" of the value at the pivot.
-     */
-    private int partition(byte[] bytes, int leftBound, int rightBound, int pivotIndex) {
-        byte pivotValue = bytes[pivotIndex];
-        bytes[pivotIndex] = bytes[rightBound];
-        bytes[rightBound] = pivotValue;
-
-        int trailingIndex = leftBound;
-        for (int leadIndex = leftBound; leadIndex < rightBound; leadIndex++) {
-            if (unsignedLessThan(bytes[leadIndex], pivotValue)) {
-                byte swap = bytes[trailingIndex];
-                bytes[trailingIndex] = bytes[leadIndex];
-                bytes[leadIndex] = swap;
-
-                trailingIndex++;
-            }
+        if (neighborhood.length != sortableByteValues.length) {
+            throw new IllegalArgumentException("MedianFilterKernel: passed neighborhood size is not equal to initialization size.");
         }
 
-        byte swap = bytes[trailingIndex];
-        bytes[trailingIndex] = bytes[rightBound];
-        bytes[rightBound] = swap;
+        for (int i = 0; i < neighborhood.length; i++) {
+            sortableByteValues[i] = neighborhood[i] & 0xFF;
+        }
 
-        return trailingIndex;
-    }
+        Arrays.sort(sortableByteValues, 0, sortableByteValues.length);
 
-    private boolean unsignedLessThan(byte left, byte right) {
-        return (((int)left) & 0xFF) < (((int)right) & 0xFF);
+        return (byte)sortableByteValues[sortableByteValues.length / 2];
     }
 }

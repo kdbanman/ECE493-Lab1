@@ -15,5 +15,8 @@
     <string name="filter_kernel_size">Filter Kernel Size</string>
 
     <string name="kernel_size_error">Kernel must be positive, odd, and not larger than image.</string>
-    <string name="error_no_image_path">Error retrieving image path from media library.</string>
+    <string name="no_image_error">Error retrieving image path from media library.</string>
+    <string name="stopping_filter_message">Stopping filter tasks...</string>
+    <string name="unrecognized_filter_from_view">Unrecognized filter type sent from view.</string>
+    <string name="cancel_filter">Cancel</string>
 </resources>

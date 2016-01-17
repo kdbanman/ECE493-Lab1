@@ -15,11 +15,13 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.ViewTreeObserver;
 import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.Spinner;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import java.io.InputStream;
@@ -36,7 +38,9 @@ public class FilterImageActivity extends ObserverActivity {
     private ImageView imageView;
     private Button filterImageButton;
     private Spinner filterChooserSpinner;
-    private ProgressBar progressBarImageFilter;
+    private ProgressBar imageFilterProgressBar;
+    private TextView filterStatusTextView;
+    private Button filterCancelButton;
 
     private static final int REQUEST_CODE_IMAGE_URI = 0,
         REQUEST_CODE_READ_STORAGE = 1;
@@ -52,9 +56,21 @@ public class FilterImageActivity extends ObserverActivity {
         }
 
         if (image.hasImage()) {
-            int width = imageView.getWidth();
-            int height = imageView.getHeight();
-            imageView.setImageBitmap(image.getScaledCopy(height, width));
+            // Add and remove a ViewTreeObserver to ensure measured width and height are used.
+            //     see http://stackoverflow.com/a/4649842/3367144
+            ViewTreeObserver.OnPreDrawListener preDrawListener = new ViewTreeObserver.OnPreDrawListener() {
+                @Override
+                public boolean onPreDraw() {
+                    int width = imageView.getWidth();
+                    int height = imageView.getHeight();
+                    imageView.setImageBitmap(image.getScaledCopy(height, width));
+
+                    imageView.getViewTreeObserver().removeOnPreDrawListener(this);
+                    return true;
+                }
+            };
+            imageView.getViewTreeObserver().addOnPreDrawListener(preDrawListener);
+
             filterImageButton.setEnabled(true);
         } else {
             imageView.setImageResource(R.drawable.placeholder);
@@ -75,18 +91,28 @@ public class FilterImageActivity extends ObserverActivity {
         }
 
         if (imageFilter.isFilterRunning()) {
-            progressBarImageFilter.setVisibility(View.VISIBLE);
-            imageView.setAlpha(0.55f);
+            filterStatusTextView.setVisibility(View.VISIBLE);
+            filterCancelButton.setVisibility(View.VISIBLE);
+            imageFilterProgressBar.setVisibility(View.VISIBLE);
+            imageView.setAlpha(0.35f);
 
             if (imageFilter.isTaskStopping()) {
-                progressBarImageFilter.setIndeterminateTintMode(PorterDuff.Mode.DST);
-                progressBarImageFilter.getIndeterminateDrawable().setColorFilter(0xFFFF0000, PorterDuff.Mode.MULTIPLY);
+                filterStatusTextView.setText(R.string.stopping_filter_message);
+                filterStatusTextView.setTextColor(0xFFFF0000);
+
+                imageFilterProgressBar.setIndeterminateTintMode(PorterDuff.Mode.DST);
+                imageFilterProgressBar.getIndeterminateDrawable().setColorFilter(0xFFFF0000, PorterDuff.Mode.MULTIPLY);
             } else {
-                progressBarImageFilter.setIndeterminateTintMode(PorterDuff.Mode.SRC_ATOP);
-                progressBarImageFilter.getIndeterminateDrawable().setColorFilter(0xFF006600, PorterDuff.Mode.MULTIPLY);
+                filterStatusTextView.setText(Integer.toString(imageFilter.getTaskProgress()) + " %");
+                filterStatusTextView.setTextColor(0xFF000000);
+
+                imageFilterProgressBar.setIndeterminateTintMode(PorterDuff.Mode.SRC_ATOP);
+                imageFilterProgressBar.getIndeterminateDrawable().setColorFilter(0xFF006600, PorterDuff.Mode.MULTIPLY);
             }
         } else {
-            progressBarImageFilter.setVisibility(View.GONE);
+            filterStatusTextView.setVisibility(View.GONE);
+            filterCancelButton.setVisibility(View.GONE);
+            imageFilterProgressBar.setVisibility(View.GONE);
             imageView.setAlpha(1f);
         }
     }
@@ -105,7 +131,9 @@ public class FilterImageActivity extends ObserverActivity {
         imageView = (ImageView) findViewById(R.id.imageView);
         filterImageButton = (Button) findViewById(R.id.buttonFilterImage);
         filterChooserSpinner = (Spinner) findViewById(R.id.spinnerFilterChooser);
-        progressBarImageFilter = (ProgressBar) findViewById(R.id.progressBarImageFilter);
+        imageFilterProgressBar = (ProgressBar) findViewById(R.id.progressBarImageFilter);
+        filterStatusTextView = (TextView) findViewById(R.id.textViewFilterStatus);
+        filterCancelButton = (Button) findViewById(R.id.button);
 
         filterImageButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -115,6 +143,14 @@ public class FilterImageActivity extends ObserverActivity {
                 }
 
                 imageFilter.backgroundFilterImage(image);
+            }
+        });
+        filterCancelButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (imageFilter.isFilterRunning()) {
+                    imageFilter.cancelBackgroundFilterTasks();
+                }
             }
         });
         filterChooserSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
@@ -128,7 +164,7 @@ public class FilterImageActivity extends ObserverActivity {
                         imageFilter.setKernelType(FilterKernelType.MEDIAN);
                         break;
                     default:
-                        Toast.makeText(FilterImageActivity.this, "Unrecognized filter type sent from view.", Toast.LENGTH_LONG).show();
+                        Toast.makeText(FilterImageActivity.this, R.string.unrecognized_filter_from_view, Toast.LENGTH_LONG).show();
                         break;
                 }
             }
@@ -178,6 +214,10 @@ public class FilterImageActivity extends ObserverActivity {
                         options.inMutable = true;
                         Bitmap newBitmap = BitmapFactory.decodeStream(imageStream, null, options);
 
+                        if (newBitmap == null) {
+                            throw new IllegalArgumentException(getString(R.string.no_image_error));
+                        }
+
                         // TODO test for null, throw exception.  probably wrap a bunch of this in setNewBitmap() in Model mutation section
                         if (imageFilter.isFilterRunning()) {
                             imageFilter.cancelBackgroundFilterTasks();
@@ -185,9 +225,9 @@ public class FilterImageActivity extends ObserverActivity {
                         image.setImage(newBitmap);
 
                     } else {
-                        throw new IllegalArgumentException(getString(R.string.error_no_image_path));
+                        throw new IllegalArgumentException(getString(R.string.no_image_error));
                     }
-                } catch (Exception e) {
+                } catch (Throwable e) {
                     Toast.makeText(this, e.getMessage(), Toast.LENGTH_LONG).show();
                 }
             }

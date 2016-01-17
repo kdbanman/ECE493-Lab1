@@ -11,11 +11,13 @@ import ece493.kdbanman.Observable;
  *
  * Created by kdbanman on 1/15/16.
  */
-class BackgroundFilterTask extends AsyncTask<Filterable, Void, int[]> {
+class BackgroundFilterTask extends AsyncTask<Filterable, Integer, int[]> {
 
     private boolean taskRunning;
     private boolean cancelTask;
     private boolean taskComplete;
+
+    private int progress;
 
     private FilterKernel filterKernel;
 
@@ -43,6 +45,10 @@ class BackgroundFilterTask extends AsyncTask<Filterable, Void, int[]> {
         this.cancelTask = true;
     }
 
+    public int getProgress() {
+        return progress;
+    }
+
     @Override
     protected void onPreExecute() {
         super.onPreExecute();
@@ -51,6 +57,9 @@ class BackgroundFilterTask extends AsyncTask<Filterable, Void, int[]> {
         taskRunning = true;
         cancelTask = false;
         taskComplete = false;
+
+        progress = 0;
+
         indirectObservable.notifyObservers();
     }
 
@@ -59,7 +68,22 @@ class BackgroundFilterTask extends AsyncTask<Filterable, Void, int[]> {
         // Do not call notifyObservers() directly or indirectly in this method.
         try {
             image = params[0];
-            filteredPixels = image.applyFilter(filterKernel);
+            filteredPixels = image.applyFilter(filterKernel, new CancellableProgressCallback() {
+                @Override
+                public void onProgressUpdate(int percentDone) {
+                    if (progress == percentDone) {
+                        return;
+                    }
+
+                    progress = percentDone;
+                    publishProgress();
+                }
+
+                @Override
+                public boolean isCancelled() {
+                    return cancelTask;
+                }
+            });
 
             return filteredPixels;
         } catch (OutOfMemoryError e) {
@@ -69,6 +93,11 @@ class BackgroundFilterTask extends AsyncTask<Filterable, Void, int[]> {
             Log.e("BackgroundFilterTask", e.toString());
             return null;
         }
+    }
+
+    @Override
+    protected void onProgressUpdate(Integer... values) {
+        indirectObservable.notifyObservers();
     }
 
     @Override
