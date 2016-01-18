@@ -4,7 +4,7 @@ import java.util.Arrays;
 import java.util.Random;
 
 /**
- * An convolutional MEDIAN filter.  See https://en.wikipedia.org/wiki/Quickselect for implementation
+ * An MEDIAN convolution filter.  See https://en.wikipedia.org/wiki/Quickselect for implementation
  * reference.
  *
  * Not accessible outside of Model package.

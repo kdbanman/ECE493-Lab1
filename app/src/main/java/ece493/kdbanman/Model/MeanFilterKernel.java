@@ -1,7 +1,7 @@
 package ece493.kdbanman.Model;
 
 /**
- * An convolutional MEAN filter.
+ * An MEAN convolution filter.
  *
  * Not accessible outside of Model package.
  *

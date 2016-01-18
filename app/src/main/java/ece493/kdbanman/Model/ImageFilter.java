@@ -24,6 +24,10 @@ public class ImageFilter extends Observable {
 
     protected ImageFilter() {}
 
+
+    /**
+     * Clear the list of background tasks if they have finished (from cancellation *or* completion).
+     */
     private void purgeOldTasks() {
         List<BackgroundFilterTask> toRemove = new ArrayList<>();
         for (BackgroundFilterTask task : backgroundTasks) {
@@ -35,6 +39,9 @@ public class ImageFilter extends Observable {
         backgroundTasks.removeAll(toRemove);
     }
 
+    /**
+     * @return True if there is at least one background task running.
+     */
     public boolean isFilterRunning() {
         for (BackgroundFilterTask task : backgroundTasks) {
             if (task.isTaskRunning()) {
@@ -44,7 +51,13 @@ public class ImageFilter extends Observable {
         return false;
     }
 
+    /**
+     * More than one currently running tasks means the minimum progress is returned.
+     *
+     * @return The progress of the currently running task between 1 and 100.
+     */
     public int getTaskProgress() {
+        purgeOldTasks();
         int minProgress = 100;
         for (BackgroundFilterTask task : backgroundTasks) {
             minProgress = Math.min(minProgress, task.getProgress());
@@ -52,6 +65,10 @@ public class ImageFilter extends Observable {
         return minProgress;
     }
 
+    /**
+     * @return True if there is one or more background tasks currently running, but whose
+     * cancellation has been requested.
+     */
     public boolean isTaskStopping() {
         for (BackgroundFilterTask task : backgroundTasks) {
             if (task.isTaskRunning() && task.isTaskCancelled()) {
@@ -61,18 +78,27 @@ public class ImageFilter extends Observable {
         return false;
     }
 
+    /**
+     * Request cancellation of all image filters currently running in the background. (Asynchronous)
+     */
     public void cancelBackgroundFilterTasks() {
         for (BackgroundFilterTask task : backgroundTasks) {
             task.cancelTask();
         }
     }
 
+    /**
+     * @param type The type of filter that will be applied when filterImageInBackground() is called.
+     */
     public void setKernelType(FilterKernelType type) {
         filterKernelType = type;
 
         notifyObservers();
     }
 
+    /**
+     * @return The type of filter that will be applied when filterImageInBackground() is called.
+     */
     public FilterKernelType getKernelType() {
         return filterKernelType;
     }

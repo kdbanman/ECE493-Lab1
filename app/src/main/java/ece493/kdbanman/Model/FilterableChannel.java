@@ -1,7 +1,8 @@
 package ece493.kdbanman.Model;
 
 /**
- * Enumeration of the channels packed into a bitmap integer.
+ * Enumeration of the channels packed into a bitmap integer with byte-level getters and setters
+ * for integer color values.
  *
  * Not accessible outside of Model package.
  *
@@ -25,13 +26,25 @@ enum FilterableChannel {
         BLUE.bitDisplacement    = 0;
     }
 
+    /**
+     * Get the channel value from a color.
+     *
+     * @param color The ARGB color to extract from.
+     * @return The byte value of the channel for the passed color.
+     */
     public byte getValue(int color) {
         int masked = color & colorMask;
         int shifted = masked >>> bitDisplacement;
-        byte casted = (byte)shifted;
-        return casted;
+        return (byte)shifted;
     }
 
+    /**
+     * Set a channel value for a color and return it.
+     *
+     * @param value The byte value for the channel.
+     * @param color The ARGB color to "modify" (recall: Java is pass-by-value)
+     * @return The passed ARGB color with the new channel value.
+     */
     public int setValue(byte value, int color) {
         int castedValue = (int)value & 0xFF;
         int shiftedValue = castedValue << bitDisplacement;
@@ -39,8 +52,6 @@ enum FilterableChannel {
         int inverseMask = ~colorMask;
         int clearedColor = color & inverseMask;
 
-        int newColor = clearedColor | shiftedValue;
-
-        return newColor;
+        return clearedColor | shiftedValue;
     }
 }
