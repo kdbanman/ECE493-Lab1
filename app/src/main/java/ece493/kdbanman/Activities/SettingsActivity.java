@@ -117,7 +117,7 @@ public class SettingsActivity extends ObserverActivity {
             @Override
             public void run() {
                 if (badKernelSize) {
-                    Toast.makeText(SettingsActivity.this, R.string.kernel_size_error, Toast.LENGTH_SHORT).show();
+                    Toast.makeText(SettingsActivity.this, R.string.error_bad_kernel_size, Toast.LENGTH_SHORT).show();
                 }
             }
         }, 1500);

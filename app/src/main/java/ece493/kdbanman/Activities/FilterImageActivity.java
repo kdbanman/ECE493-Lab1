@@ -9,6 +9,7 @@ import android.graphics.PorterDuff;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
+import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.util.Log;
@@ -24,6 +25,7 @@ import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.io.IOException;
 import java.io.InputStream;
 
 import ece493.kdbanman.Model.FilterKernelType;
@@ -50,11 +52,167 @@ public class FilterImageActivity extends ObserverActivity {
 
     @Override
     protected void renderViews() {
-        if (imageView == null || filterChooserSpinner == null || filterImageButton == null) {
+        if (!allViewsInitialized()) {
             Log.w("FilterImageActivity", "renderViews() called before views initialized.");
             return;
         }
 
+        if (!modelInitialized()) {
+            Log.w("FilterImageActivity", "renderViews() called before model initialized.");
+            return;
+        }
+
+        renderImage();
+        renderFilterChoice();
+        renderRunningFilter();
+    }
+
+
+
+    // =====================
+    // Android boilerplate and control events
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_filter_image);
+
+        initializeModel();
+        initializeViews();
+        initializeControllers();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (!hasFilePermissions()) {
+            requestFilePermissions();
+        }
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        // Inflate the menu; this adds items to the action bar if it is present.
+        getMenuInflater().inflate(R.menu.menu_filter_image, menu);
+        return true;
+    }
+
+    // Currently used only to process image selection from filesystem.
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent returnedIntent) {
+        super.onActivityResult(requestCode, resultCode, returnedIntent);
+
+        // from http://stackoverflow.com/a/9745454
+        if (requestCode == REQUEST_CODE_IMAGE_URI) {
+            if (resultCode == RESULT_OK) {
+                try {
+                    Uri imageUri = getUriFromIntentReturn(returnedIntent);
+                    Bitmap newBitmap = readBitmapFromUri(imageUri);
+                    setNewBitmap(newBitmap);
+                } catch (Throwable e) {
+                    Toast.makeText(this, e.getMessage(), Toast.LENGTH_LONG).show();
+                }
+            }
+        }
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        int id = item.getItemId();
+
+        if (id == R.id.action_settings) {
+            launchSettings();
+            return true;
+        } else if (id == R.id.action_load_image) {
+            launchImageChooser();
+            return true;
+        }
+
+        return super.onOptionsItemSelected(item);
+    }
+
+
+    // =====================
+    // Private methods
+
+    private void initializeModel() {
+        image = ModelServer.getInstance().getFilterable(this);
+        imageFilter = ModelServer.getInstance().getImageFilter(this);
+    }
+
+    private void initializeViews() {
+        imageView = (ImageView) findViewById(R.id.imageView);
+        filterImageButton = (Button) findViewById(R.id.buttonFilterImage);
+        filterChooserSpinner = (Spinner) findViewById(R.id.spinnerFilterChooser);
+        imageFilterProgressBar = (ProgressBar) findViewById(R.id.progressBarImageFilter);
+        filterStatusTextView = (TextView) findViewById(R.id.textViewFilterStatus);
+        filterCancelButton = (Button) findViewById(R.id.button);
+    }
+
+    private void initializeControllers() {
+        filterImageButton.setOnClickListener(new FilterImageOnClickListener());
+        filterCancelButton.setOnClickListener(new CancelFilterOnClickListener());
+        filterChooserSpinner.setOnItemSelectedListener(new ChooseFilterOnItemSelectedListener());
+    }
+
+    private boolean modelInitialized() {
+        return !(image == null ||
+                imageFilter == null);
+    }
+
+    private boolean allViewsInitialized() {
+        return !(imageView == null ||
+                filterImageButton == null ||
+                filterChooserSpinner == null ||
+                imageFilterProgressBar == null ||
+                filterStatusTextView == null ||
+                filterCancelButton == null);
+    }
+
+    private void renderRunningFilter() {
+        if (imageFilter.isFilterRunning()) {
+            filterStatusTextView.setVisibility(View.VISIBLE);
+            filterCancelButton.setVisibility(View.VISIBLE);
+            imageFilterProgressBar.setVisibility(View.VISIBLE);
+            imageView.setAlpha(0.35f);
+
+            if (imageFilter.isTaskStopping()) {
+                filterStatusTextView.setText(R.string.message_stopping_filter);
+                filterStatusTextView.setTextColor(0xFFFF0000);
+
+                imageFilterProgressBar.setIndeterminateTintMode(PorterDuff.Mode.DST);
+                imageFilterProgressBar.getIndeterminateDrawable().setColorFilter(0xFFFF0000, PorterDuff.Mode.MULTIPLY);
+            } else {
+                filterStatusTextView.setText(Integer.toString(imageFilter.getTaskProgress()) + " %");
+                filterStatusTextView.setTextColor(0xFF000000);
+
+                imageFilterProgressBar.setIndeterminateTintMode(PorterDuff.Mode.SRC_ATOP);
+                imageFilterProgressBar.getIndeterminateDrawable().setColorFilter(0xFF006600, PorterDuff.Mode.MULTIPLY);
+            }
+        } else {
+            filterStatusTextView.setVisibility(View.GONE);
+            filterCancelButton.setVisibility(View.GONE);
+            imageFilterProgressBar.setVisibility(View.GONE);
+            imageView.setAlpha(1f);
+        }
+    }
+
+    private void renderFilterChoice() {
+        switch (imageFilter.getKernelType()) {
+            case MEAN:
+                filterChooserSpinner.setSelection(0);
+                break;
+            case MEDIAN:
+                filterChooserSpinner.setSelection(1);
+                break;
+
+            default:
+                Toast.makeText(this, "Unrecognized filter type sent to view.", Toast.LENGTH_LONG).show();
+                break;
+        }
+    }
+
+    private void renderImage() {
         if (image.hasImage()) {
             // Add and remove a ViewTreeObserver to ensure measured width and height are used.
             //     see http://stackoverflow.com/a/4649842/3367144
@@ -76,201 +234,117 @@ public class FilterImageActivity extends ObserverActivity {
             imageView.setImageResource(R.drawable.placeholder);
             filterImageButton.setEnabled(false);
         }
+    }
 
-        switch (imageFilter.getKernelType()) {
-            case MEAN:
-                filterChooserSpinner.setSelection(0);
-                break;
-            case MEDIAN:
-                filterChooserSpinner.setSelection(1);
-                break;
+    private void requestFilePermissions() {
+        ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, REQUEST_CODE_READ_STORAGE);
+    }
 
-            default:
-                Toast.makeText(this, "Unrecognized filter type sent to view.", Toast.LENGTH_LONG).show();
-                break;
+    private boolean hasFilePermissions() {
+        return ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE)
+                == PackageManager.PERMISSION_GRANTED;
+    }
+
+    @NonNull
+    private Uri getUriFromIntentReturn(Intent returnedIntent) {
+        if (returnedIntent == null || returnedIntent.getData() == null || returnedIntent.getData().getPath() == null) {
+            throw new IllegalArgumentException(getString(R.string.error_no_image_error_received));
+        }
+
+        return returnedIntent.getData();
+    }
+
+    private Bitmap readBitmapFromUri(Uri imageUri) throws IOException {
+        if (!hasFilePermissions()) {
+            requestFilePermissions();
+            throw new IOException(getString(R.string.message_allow_file_permissions));
+        }
+
+        InputStream imageStream = getContentResolver().openInputStream(imageUri);
+        BitmapFactory.Options options = new BitmapFactory.Options();
+        options.inMutable = true;
+        return BitmapFactory.decodeStream(imageStream, null, options);
+    }
+
+    private void launchSettings() {
+        Intent startSettingsIntent = new Intent(this, SettingsActivity.class);
+        startActivity(startSettingsIntent);
+    }
+
+    private void launchImageChooser() {
+        // From http://stackoverflow.com/a/16930842
+        Intent chooseImageIntent = new Intent(
+                Intent.ACTION_PICK,
+                MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+        startActivityForResult(chooseImageIntent, REQUEST_CODE_IMAGE_URI);
+    }
+
+
+
+    // ======================
+    // Controller methods and classes
+
+    private void setNewBitmap(Bitmap newBitmap) {
+        if (newBitmap == null) {
+            throw new IllegalArgumentException(getString(R.string.error_no_image_error_received));
         }
 
         if (imageFilter.isFilterRunning()) {
-            filterStatusTextView.setVisibility(View.VISIBLE);
-            filterCancelButton.setVisibility(View.VISIBLE);
-            imageFilterProgressBar.setVisibility(View.VISIBLE);
-            imageView.setAlpha(0.35f);
+            imageFilter.cancelBackgroundFilterTasks();
+        }
+        image.setImage(newBitmap);
 
-            if (imageFilter.isTaskStopping()) {
-                filterStatusTextView.setText(R.string.stopping_filter_message);
-                filterStatusTextView.setTextColor(0xFFFF0000);
-
-                imageFilterProgressBar.setIndeterminateTintMode(PorterDuff.Mode.DST);
-                imageFilterProgressBar.getIndeterminateDrawable().setColorFilter(0xFFFF0000, PorterDuff.Mode.MULTIPLY);
-            } else {
-                filterStatusTextView.setText(Integer.toString(imageFilter.getTaskProgress()) + " %");
-                filterStatusTextView.setTextColor(0xFF000000);
-
-                imageFilterProgressBar.setIndeterminateTintMode(PorterDuff.Mode.SRC_ATOP);
-                imageFilterProgressBar.getIndeterminateDrawable().setColorFilter(0xFF006600, PorterDuff.Mode.MULTIPLY);
+        if (imageFilter.getKernelSize() > Math.min(image.getWidth(), image.getHeight())) {
+            int shrunkKernelSize = Math.min(image.getWidth(), image.getHeight());
+            shrunkKernelSize = Math.max(3, shrunkKernelSize - 1);
+            if (shrunkKernelSize % 2 == 0) {
+                shrunkKernelSize -= 1;
             }
-        } else {
-            filterStatusTextView.setVisibility(View.GONE);
-            filterCancelButton.setVisibility(View.GONE);
-            imageFilterProgressBar.setVisibility(View.GONE);
-            imageView.setAlpha(1f);
+
+            imageFilter.setKernelSize(shrunkKernelSize);
+            Toast.makeText(this, R.string.message_kernel_size_shrunk, Toast.LENGTH_LONG).show();
         }
     }
 
-    // =====================
-    // Boilerplate and control events
-
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_filter_image);
-
-        image = ModelServer.getInstance().getFilterable(this);
-        imageFilter = ModelServer.getInstance().getImageFilter(this);
-
-        imageView = (ImageView) findViewById(R.id.imageView);
-        filterImageButton = (Button) findViewById(R.id.buttonFilterImage);
-        filterChooserSpinner = (Spinner) findViewById(R.id.spinnerFilterChooser);
-        imageFilterProgressBar = (ProgressBar) findViewById(R.id.progressBarImageFilter);
-        filterStatusTextView = (TextView) findViewById(R.id.textViewFilterStatus);
-        filterCancelButton = (Button) findViewById(R.id.button);
-
-        filterImageButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (imageFilter.isFilterRunning()) {
-                    imageFilter.cancelBackgroundFilterTasks();
-                }
-
-                imageFilter.backgroundFilterImage(image);
-            }
-        });
-        filterCancelButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (imageFilter.isFilterRunning()) {
-                    imageFilter.cancelBackgroundFilterTasks();
-                }
-            }
-        });
-        filterChooserSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-            @Override
-            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                switch (position) {
-                    case (0):
-                        imageFilter.setKernelType(FilterKernelType.MEAN);
-                        break;
-                    case (1):
-                        imageFilter.setKernelType(FilterKernelType.MEDIAN);
-                        break;
-                    default:
-                        Toast.makeText(FilterImageActivity.this, R.string.unrecognized_filter_from_view, Toast.LENGTH_LONG).show();
-                        break;
-                }
+    private class FilterImageOnClickListener implements View.OnClickListener {
+        @Override
+        public void onClick(View v) {
+            if (imageFilter.isFilterRunning()) {
+                imageFilter.cancelBackgroundFilterTasks();
             }
 
-            @Override
-            public void onNothingSelected(AdapterView<?> parent) {
-                imageFilter.setKernelType(FilterKernelType.MEAN);
-            }
-        });
-    }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE)
-                != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, REQUEST_CODE_READ_STORAGE);
+            imageFilter.backgroundFilterImage(image);
         }
     }
 
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.menu_filter_image, menu);
-        return true;
-    }
-
-    // Currently used only to process image selection from filesystem.
-    @Override
-    public void onActivityResult(int requestCode, int resultcode, Intent returnedIntent) {
-        super.onActivityResult(requestCode, resultcode, returnedIntent);
-
-        // from http://stackoverflow.com/a/9745454
-        if (requestCode == REQUEST_CODE_IMAGE_URI) {
-            if (resultcode == RESULT_OK) {
-                try {
-                    if (returnedIntent != null && returnedIntent.getData() != null && returnedIntent.getData().getPath() != null) {
-                        Uri imageUri = returnedIntent.getData();
-
-                        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE)
-                                != PackageManager.PERMISSION_GRANTED) {
-                            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, REQUEST_CODE_READ_STORAGE);
-                            throw new Exception("Access to external storage must be granted before images may be loaded.");
-                        }
-
-                        InputStream imageStream = getContentResolver().openInputStream(imageUri);
-                        BitmapFactory.Options options = new BitmapFactory.Options();
-                        options.inMutable = true;
-                        Bitmap newBitmap = BitmapFactory.decodeStream(imageStream, null, options);
-
-                        if (newBitmap == null) {
-                            throw new IllegalArgumentException(getString(R.string.no_image_error));
-                        }
-
-                        // TODO wrap a bunch of this in setNewBitmap() in Model mutation section
-                        if (imageFilter.isFilterRunning()) {
-                            imageFilter.cancelBackgroundFilterTasks();
-                        }
-                        image.setImage(newBitmap);
-
-                        if (imageFilter.getKernelSize() > Math.min(image.getWidth(), image.getHeight())) {
-                            int shrunkKernelSize = Math.min(image.getWidth(), image.getHeight());
-                            shrunkKernelSize = Math.max(3, shrunkKernelSize - 1);
-                            if (shrunkKernelSize % 2 == 0) {
-                                shrunkKernelSize -= 1;
-                            }
-
-                            imageFilter.setKernelSize(shrunkKernelSize);
-                            Toast.makeText(this, R.string.kernel_size_shrunk, Toast.LENGTH_LONG).show();
-                        }
-                    } else {
-                        throw new IllegalArgumentException(getString(R.string.no_image_error));
-                    }
-                } catch (Throwable e) {
-                    Toast.makeText(this, e.getMessage(), Toast.LENGTH_LONG).show();
-                }
+    private class CancelFilterOnClickListener implements View.OnClickListener {
+        @Override
+        public void onClick(View v) {
+            if (imageFilter.isFilterRunning()) {
+                imageFilter.cancelBackgroundFilterTasks();
             }
         }
     }
 
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
-
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            Intent startSettingsIntent = new Intent(this, SettingsActivity.class);
-            startActivity(startSettingsIntent);
-
-            return true;
-        } else if (id == R.id.action_load_image) {
-            // From http://stackoverflow.com/a/16930842
-            Intent chooseImageIntent = new Intent(
-                    Intent.ACTION_PICK,
-                    MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
-            startActivityForResult(chooseImageIntent, REQUEST_CODE_IMAGE_URI);
+    private class ChooseFilterOnItemSelectedListener implements AdapterView.OnItemSelectedListener {
+        @Override
+        public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+            switch (position) {
+                case (0):
+                    imageFilter.setKernelType(FilterKernelType.MEAN);
+                    break;
+                case (1):
+                    imageFilter.setKernelType(FilterKernelType.MEDIAN);
+                    break;
+                default:
+                    Toast.makeText(FilterImageActivity.this, R.string.error_unrecognized_filter_from_view, Toast.LENGTH_LONG).show();
+                    break;
+            }
         }
 
-        return super.onOptionsItemSelected(item);
+        @Override
+        public void onNothingSelected(AdapterView<?> parent) {
+            imageFilter.setKernelType(FilterKernelType.MEAN);
+        }
     }
-
-    // ======================
-    // Model mutation
-
-
 }

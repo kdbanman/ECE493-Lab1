@@ -1,23 +1,27 @@
 <resources>
     <string name="app_name">kdbanman: ECE493 2016W Lab 1</string>
+    <string name="title_activity_settings">Settings</string>
 
-    <string name="filter_image">Filter\nImage</string>
     <string name="image_to_filter">Image to filter.</string>
-    <string-array name="filter_names">
+
+
+
+    <string name="label_filter_kernel_size">Filter Kernel Size</string>
+    <string-array name="label_filter_names">
         <item>Mean Filter</item>
         <item>Median Filter</item>
     </string-array>
 
-    <string name="action_settings">Settings</string>
+    <string name="action_filter_image">Filter\nImage</string>
     <string name="action_load_image">Load Image</string>
-    <string name="title_activity_settings">Settings</string>
+    <string name="action_settings">Settings</string>
+    <string name="action_cancel_filter">Cancel</string>
 
-    <string name="filter_kernel_size">Filter Kernel Size</string>
+    <string name="error_bad_kernel_size">Kernel must be positive, odd, and not larger than image.</string>
+    <string name="error_no_image_error_received">Error retrieving image path from media library.</string>
+    <string name="error_unrecognized_filter_from_view">Unrecognized filter type sent from view.</string>
 
-    <string name="kernel_size_error">Kernel must be positive, odd, and not larger than image.</string>
-    <string name="no_image_error">Error retrieving image path from media library.</string>
-    <string name="stopping_filter_message">Stopping filter tasks...</string>
-    <string name="unrecognized_filter_from_view">Unrecognized filter type sent from view.</string>
-    <string name="cancel_filter">Cancel</string>
-    <string name="kernel_size_shrunk">Kernel size has been shrunk to match image dimensions.</string>
+    <string name="message_kernel_size_shrunk">Kernel size has been shrunk to match image dimensions.</string>
+    <string name="message_stopping_filter">Stopping filter tasks…</string>
+    <string name="message_allow_file_permissions">Allow storage read to proceed.</string>
 </resources>

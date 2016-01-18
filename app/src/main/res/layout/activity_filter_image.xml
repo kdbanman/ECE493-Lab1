@@ -29,7 +29,7 @@
             android:layout_height="wrap_content"
             android:id="@+id/spinnerFilterChooser"
             android:spinnerMode="dropdown"
-            android:entries="@array/filter_names"
+            android:entries="@array/label_filter_names"
             android:layout_alignParentTop="true"
             android:layout_alignParentStart="true"
             android:layout_toStartOf="@+id/buttonFilterImage"
@@ -40,7 +40,7 @@
         <Button
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/filter_image"
+            android:text="@string/action_filter_image"
             android:id="@+id/buttonFilterImage"
             android:nestedScrollingEnabled="false"
             android:enabled="true"
@@ -72,7 +72,7 @@
         style="?android:attr/buttonStyleSmall"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="@string/cancel_filter"
+        android:text="@string/action_cancel_filter"
         android:id="@+id/button"
         android:layout_below="@+id/textViewFilterStatus"
         android:layout_centerHorizontal="true" />

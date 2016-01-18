@@ -10,7 +10,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:textAppearance="?android:attr/textAppearanceMedium"
-        android:text="@string/filter_kernel_size"
+        android:text="@string/label_filter_kernel_size"
         android:id="@+id/textViewKernelSize"
         android:layout_alignParentTop="true"
         android:layout_alignParentStart="true" />
