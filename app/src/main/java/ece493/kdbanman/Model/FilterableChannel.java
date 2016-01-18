@@ -2,6 +2,9 @@ package ece493.kdbanman.Model;
 
 /**
  * Enumeration of the channels packed into a bitmap integer.
+ *
+ * Not accessible outside of Model package.
+ *
  * Created by kdbanman on 1/13/16.
  */
 enum FilterableChannel {

@@ -25,69 +25,39 @@ public class SettingsActivity extends ObserverActivity {
     Filterable image;
     ImageFilter imageFilter;
 
-    boolean badKernelSize;
-
     @Override
     protected void renderViews() {
-        if (kernelSizeTextView == null) {
+        if (!allViewsInitialized()) {
             Log.w("SettingsActivity", "renderViews() called before views initialized.");
             return;
         }
 
+        if (!modelInitialized()) {
+            Log.w("SettingsActivity", "renderViews() called before model initialized.");
+            return;
+        }
+
+        renderKernelSize();
+    }
+
+    private void renderKernelSize() {
         kernelSizeTextView.setText(Integer.toString(imageFilter.getKernelSize()));
         kernelSizeEditText.setTextColor((0xFF000000));
     }
+
+
+
+    // =====================
+    // Android boilerplate and control events
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_settings);
 
-        imageFilter = ModelServer.getInstance().getImageFilter(this);
-        image = ModelServer.getInstance().getFilterable(this);
-
-        badKernelSize = false;
-
-        kernelSizeTextView = (TextView) findViewById(R.id.textViewReadOnlyKernelSize);
-        kernelSizeEditText = (EditText) findViewById(R.id.editTextKernelSize);
-
-        kernelSizeEditText.addTextChangedListener(new TextWatcher() {
-            @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-                return;
-            }
-
-            @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) {
-                if (s.length() == 0) {
-                    return;
-                }
-
-                try {
-                    int kernelSize = Integer.parseInt(s.toString());
-
-                    if (image.hasImage() && kernelSize > Math.min(image.getWidth(), image.getHeight())) {
-                        throw new IllegalArgumentException();
-                    }
-                    imageFilter.setKernelSize(kernelSize);
-                    badKernelSize = false;
-                } catch (NumberFormatException e) {
-                    Log.w("SettingsActivity", "Kernel size input was not an integer.");
-                    badKernelSize = true;
-                    kernelSizeEditText.setTextColor(0xFFFF0000);
-                    queueBadKernelSizeToast();
-                } catch (IllegalArgumentException e) {
-                    badKernelSize = true;
-                    kernelSizeEditText.setTextColor(0xFFFF0000);
-                    queueBadKernelSizeToast();
-                }
-            }
-
-            @Override
-            public void afterTextChanged(Editable s) {
-                return;
-            }
-        });
+        initializeModel();
+        initializeViews();
+        initializeControllers();
     }
 
     @Override
@@ -112,14 +82,87 @@ public class SettingsActivity extends ObserverActivity {
         return super.onOptionsItemSelected(item);
     }
 
-    private void queueBadKernelSizeToast() {
-        new Handler().postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                if (badKernelSize) {
-                    Toast.makeText(SettingsActivity.this, R.string.error_bad_kernel_size, Toast.LENGTH_SHORT).show();
-                }
+
+
+    // =====================
+    // Private methods
+
+    private void initializeModel() {
+        imageFilter = ModelServer.getInstance().getImageFilter(this);
+        image = ModelServer.getInstance().getFilterable(this);
+    }
+
+    private void initializeViews() {
+        kernelSizeTextView = (TextView) findViewById(R.id.textViewReadOnlyKernelSize);
+        kernelSizeEditText = (EditText) findViewById(R.id.editTextKernelSize);
+    }
+
+    private void initializeControllers() {
+        kernelSizeEditText.addTextChangedListener(new KernelSizeTextWatcher());
+    }
+
+    private boolean modelInitialized() {
+        return !(image == null || imageFilter == null);
+    }
+
+    private boolean allViewsInitialized() {
+        return !(kernelSizeTextView == null || kernelSizeEditText == null);
+    }
+
+
+
+    // ======================
+    // Controller methods and classes
+
+    // NOTE: This controller class crosses some responsibilities of the view and the model, but I'm
+    //       not sure how to address it.  It changes text color (view responsibility) in response to
+    //       model object relationship validation (model responsibility).
+    private class KernelSizeTextWatcher implements TextWatcher {
+        boolean badKernelSize = false;
+
+        @Override
+        public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+        }
+
+        @Override
+        public void onTextChanged(CharSequence s, int start, int before, int count) {
+            if (s.length() == 0) {
+                return;
             }
-        }, 1500);
+
+            try {
+                int kernelSize = Integer.parseInt(s.toString());
+
+                if (image.hasImage() && kernelSize > Math.min(image.getWidth(), image.getHeight())) {
+                    throw new IllegalArgumentException();
+                }
+                imageFilter.setKernelSize(kernelSize);
+                badKernelSize = false;
+            } catch (NumberFormatException e) {
+                Log.w("SettingsActivity", "Kernel size input was not an integer.");
+                badKernelSize = true;
+                kernelSizeEditText.setTextColor(0xFFFF0000);
+                queueBadKernelSizeToast();
+            } catch (IllegalArgumentException e) {
+                badKernelSize = true;
+                kernelSizeEditText.setTextColor(0xFFFF0000);
+                queueBadKernelSizeToast();
+            }
+        }
+
+        @Override
+        public void afterTextChanged(Editable s) {
+        }
+
+        private void queueBadKernelSizeToast() {
+            new Handler().postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    if (badKernelSize) {
+                        Toast.makeText(SettingsActivity.this, R.string.error_bad_kernel_size, Toast.LENGTH_SHORT).show();
+                    }
+                }
+            }, 1500);
+        }
     }
 }

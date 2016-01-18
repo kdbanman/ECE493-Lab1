@@ -3,6 +3,8 @@ package ece493.kdbanman.Model;
 /**
  * An convolutional MEAN filter.
  *
+ * Not accessible outside of Model package.
+ *
  * Created by kdbanman on 1/13/16.
  */
 class MeanFilterKernel extends FilterKernel {

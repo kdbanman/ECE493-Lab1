@@ -9,6 +9,8 @@ import ece493.kdbanman.Observable;
  * Cancellable task wrapping Filterable.applyFilter() that only notifies observers on
  * the foreground thread.
  *
+ * Not accessible outside of Model package.
+ *
  * Created by kdbanman on 1/15/16.
  */
 class BackgroundFilterTask extends AsyncTask<Filterable, Integer, int[]> {
@@ -26,10 +28,14 @@ class BackgroundFilterTask extends AsyncTask<Filterable, Integer, int[]> {
 
     private Observable indirectObservable;
 
+
+
     public BackgroundFilterTask(FilterKernel filterKernel, Observable indirectObservable) {
         this.filterKernel = filterKernel;
         this.indirectObservable = indirectObservable;
     }
+
+
 
     public boolean isTaskRunning() {
         return taskRunning;
@@ -39,15 +45,19 @@ class BackgroundFilterTask extends AsyncTask<Filterable, Integer, int[]> {
         return cancelTask;
     }
 
-    public boolean isTaskComplete() { return taskComplete; }
-
-    public void cancelTask() {
-        this.cancelTask = true;
+    public boolean isTaskComplete() {
+        return taskComplete;
     }
 
     public int getProgress() {
         return progress;
     }
+
+    public void cancelTask() {
+        this.cancelTask = true;
+    }
+
+
 
     @Override
     protected void onPreExecute() {
@@ -65,7 +75,7 @@ class BackgroundFilterTask extends AsyncTask<Filterable, Integer, int[]> {
 
     @Override
     protected int[] doInBackground(Filterable... params) {
-        // Do not call notifyObservers() directly or indirectly in this method.
+        // Do NOT call notifyObservers() directly or indirectly in this method.
         try {
             image = params[0];
             filteredPixels = image.applyFilter(filterKernel, new CancellableProgressCallback() {

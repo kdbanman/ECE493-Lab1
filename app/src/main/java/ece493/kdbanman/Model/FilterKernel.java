@@ -2,6 +2,9 @@ package ece493.kdbanman.Model;
 
 /**
  * A lambda-style callback for processing a kernel-defined neighborhood of pixels.
+ *
+ * Not accessible outside of Model package.
+ *
  * Created by kdbanman on 1/13/16.
  */
 abstract class FilterKernel {

@@ -9,6 +9,9 @@ import ece493.kdbanman.Observable;
  * An observable Bitmap wrapper with forwarding and facade methods to accessors and
  * mutators that are useful for display and convolution filtering.
  *
+ * Accessible outside of Model package, but not instantiable outside of Model package.
+ * Instantiated and served by ModelServer.
+ *
  * Created by kdbanman on 1/13/16.
  */
 public class Filterable extends Observable {
@@ -16,6 +19,8 @@ public class Filterable extends Observable {
     private Bitmap image;
 
     protected Filterable() {}
+
+
 
     // =================
     // Private Methods

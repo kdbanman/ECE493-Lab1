@@ -132,6 +132,7 @@ public class FilterImageActivity extends ObserverActivity {
     }
 
 
+
     // =====================
     // Private methods
 
@@ -167,34 +168,6 @@ public class FilterImageActivity extends ObserverActivity {
                 imageFilterProgressBar == null ||
                 filterStatusTextView == null ||
                 filterCancelButton == null);
-    }
-
-    private void renderRunningFilter() {
-        if (imageFilter.isFilterRunning()) {
-            filterStatusTextView.setVisibility(View.VISIBLE);
-            filterCancelButton.setVisibility(View.VISIBLE);
-            imageFilterProgressBar.setVisibility(View.VISIBLE);
-            imageView.setAlpha(0.35f);
-
-            if (imageFilter.isTaskStopping()) {
-                filterStatusTextView.setText(R.string.message_stopping_filter);
-                filterStatusTextView.setTextColor(0xFFFF0000);
-
-                imageFilterProgressBar.setIndeterminateTintMode(PorterDuff.Mode.DST);
-                imageFilterProgressBar.getIndeterminateDrawable().setColorFilter(0xFFFF0000, PorterDuff.Mode.MULTIPLY);
-            } else {
-                filterStatusTextView.setText(Integer.toString(imageFilter.getTaskProgress()) + " %");
-                filterStatusTextView.setTextColor(0xFF000000);
-
-                imageFilterProgressBar.setIndeterminateTintMode(PorterDuff.Mode.SRC_ATOP);
-                imageFilterProgressBar.getIndeterminateDrawable().setColorFilter(0xFF006600, PorterDuff.Mode.MULTIPLY);
-            }
-        } else {
-            filterStatusTextView.setVisibility(View.GONE);
-            filterCancelButton.setVisibility(View.GONE);
-            imageFilterProgressBar.setVisibility(View.GONE);
-            imageView.setAlpha(1f);
-        }
     }
 
     private void renderFilterChoice() {
@@ -233,6 +206,34 @@ public class FilterImageActivity extends ObserverActivity {
         } else {
             imageView.setImageResource(R.drawable.placeholder);
             filterImageButton.setEnabled(false);
+        }
+    }
+
+    private void renderRunningFilter() {
+        if (imageFilter.isFilterRunning()) {
+            filterStatusTextView.setVisibility(View.VISIBLE);
+            filterCancelButton.setVisibility(View.VISIBLE);
+            imageFilterProgressBar.setVisibility(View.VISIBLE);
+            imageView.setAlpha(0.35f);
+
+            if (imageFilter.isTaskStopping()) {
+                filterStatusTextView.setText(R.string.message_stopping_filter);
+                filterStatusTextView.setTextColor(0xFFFF0000);
+
+                imageFilterProgressBar.setIndeterminateTintMode(PorterDuff.Mode.DST);
+                imageFilterProgressBar.getIndeterminateDrawable().setColorFilter(0xFFFF0000, PorterDuff.Mode.MULTIPLY);
+            } else {
+                filterStatusTextView.setText(Integer.toString(imageFilter.getTaskProgress()) + " %");
+                filterStatusTextView.setTextColor(0xFF000000);
+
+                imageFilterProgressBar.setIndeterminateTintMode(PorterDuff.Mode.SRC_ATOP);
+                imageFilterProgressBar.getIndeterminateDrawable().setColorFilter(0xFF006600, PorterDuff.Mode.MULTIPLY);
+            }
+        } else {
+            filterStatusTextView.setVisibility(View.GONE);
+            filterCancelButton.setVisibility(View.GONE);
+            imageFilterProgressBar.setVisibility(View.GONE);
+            imageView.setAlpha(1f);
         }
     }
 
@@ -313,7 +314,7 @@ public class FilterImageActivity extends ObserverActivity {
                 imageFilter.cancelBackgroundFilterTasks();
             }
 
-            imageFilter.backgroundFilterImage(image);
+            imageFilter.filterImageInBackground(image);
         }
     }
 

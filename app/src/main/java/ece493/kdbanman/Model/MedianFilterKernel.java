@@ -7,6 +7,8 @@ import java.util.Random;
  * An convolutional MEDIAN filter.  See https://en.wikipedia.org/wiki/Quickselect for implementation
  * reference.
  *
+ * Not accessible outside of Model package.
+ *
  * Created by kdbanman on 1/13/16.
  */
 class MedianFilterKernel extends FilterKernel {

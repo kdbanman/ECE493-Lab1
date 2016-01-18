@@ -9,6 +9,9 @@ import ece493.kdbanman.Observable;
  * Logic and state that is to run kernel-based convolution filters on a background thread.
  * Works with the Filterable class and FilterKernel interface.
  *
+ * Accessible outside of Model package, but not instantiable outside of Model package.
+ * Instantiated and served by ModelServer.
+ *
  * Created by kdbanman on 1/13/16.
  */
 public class ImageFilter extends Observable {
@@ -18,7 +21,6 @@ public class ImageFilter extends Observable {
     private FilterKernelType filterKernelType = FilterKernelType.MEAN;
 
     private List<BackgroundFilterTask> backgroundTasks = new ArrayList<>();
-    private int taskProgress;
 
     protected ImageFilter() {}
 
@@ -106,7 +108,7 @@ public class ImageFilter extends Observable {
      *
      * @param image The image to be filtered.
      */
-    public void backgroundFilterImage(Filterable image) {
+    public void filterImageInBackground(Filterable image) {
         purgeOldTasks();
 
         if (image == null) {

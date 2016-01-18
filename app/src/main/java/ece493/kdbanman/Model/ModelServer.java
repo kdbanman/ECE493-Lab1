@@ -3,7 +3,11 @@ package ece493.kdbanman.Model;
 import ece493.kdbanman.Observer;
 
 /**
- * A singleton data server marrying observable model objects to the views observing them.
+ * Singleton data model server.  Serves observable model objects to the views observing them.
+ *
+ * Classes that are not instantiable outside the Model package (EX: ImageFilter) are instantiated
+ * and managed by the ModelServer.  In essence, ModelServer is the single point of reference for
+ * a view to access the Model.
  *
  * Created by kdbanman on 1/13/16.
  */
