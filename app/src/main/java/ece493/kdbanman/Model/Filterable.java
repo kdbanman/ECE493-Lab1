@@ -105,7 +105,7 @@ public class Filterable extends Observable {
      * @throws IllegalArgumentException If the filterKernel has an invalid size.
      * @return A copy of the pixels as processed by the filterKernel
      */
-    public int[] applyFilter(FilterKernel filterKernel, CancellableProgressCallback progressCallback) {
+    public int[] applyFilter(FilterKernel filterKernel, TaskProgressCallback progressCallback) {
         int neighborhoodSize = filterKernel.getSize();
         if (neighborhoodSize < 3 || neighborhoodSize % 2 == 0) {
             throw new IllegalArgumentException("Filterable.applyFilter() called with bad neighborhood size.");

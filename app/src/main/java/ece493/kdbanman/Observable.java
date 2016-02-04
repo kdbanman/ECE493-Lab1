@@ -4,7 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Simple implementation of the Observable component of the Observer GOF pattern.
+ * Simple implementation of the Observable component of the Observer GOF pattern, rather than
+ * using java.util.Observable because it is far more complex than necessary.
  *
  * Created by kdbanman on 1/13/16.
  */

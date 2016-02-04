@@ -78,7 +78,7 @@ class BackgroundFilterTask extends AsyncTask<Filterable, Integer, int[]> {
         // Do NOT call notifyObservers() directly or indirectly in this method.
         try {
             image = params[0];
-            filteredPixels = image.applyFilter(filterKernel, new CancellableProgressCallback() {
+            filteredPixels = image.applyFilter(filterKernel, new TaskProgressCallback() {
                 @Override
                 public void onProgressUpdate(int percentDone) {
                     if (progress == percentDone) {

@@ -105,13 +105,7 @@ public class FilterImageActivity extends ObserverActivity {
         // from http://stackoverflow.com/a/9745454
         if (requestCode == REQUEST_CODE_IMAGE_URI) {
             if (resultCode == RESULT_OK) {
-                try {
-                    Uri imageUri = getUriFromIntentReturn(returnedIntent);
-                    Bitmap newBitmap = readBitmapFromUri(imageUri);
-                    setNewBitmap(newBitmap);
-                } catch (Throwable e) {
-                    Toast.makeText(this, e.getMessage(), Toast.LENGTH_LONG).show();
-                }
+                handleImageLoadIntent(returnedIntent);
             }
         }
     }
@@ -246,6 +240,16 @@ public class FilterImageActivity extends ObserverActivity {
                 == PackageManager.PERMISSION_GRANTED;
     }
 
+    private void handleImageLoadIntent(Intent returnedIntent) {
+        try {
+            Uri imageUri = getUriFromIntentReturn(returnedIntent);
+            Bitmap newBitmap = readBitmapFromUri(imageUri);
+            setNewBitmap(newBitmap);
+        } catch (Throwable e) {
+            Toast.makeText(this, e.getMessage(), Toast.LENGTH_LONG).show();
+        }
+    }
+
     @NonNull
     private Uri getUriFromIntentReturn(Intent returnedIntent) {
         if (returnedIntent == null || returnedIntent.getData() == null || returnedIntent.getData().getPath() == null) {
@@ -264,6 +268,7 @@ public class FilterImageActivity extends ObserverActivity {
         InputStream imageStream = getContentResolver().openInputStream(imageUri);
         BitmapFactory.Options options = new BitmapFactory.Options();
         options.inMutable = true;
+        options.inPreferredConfig = Bitmap.Config.ARGB_8888;
         return BitmapFactory.decodeStream(imageStream, null, options);
     }
 
