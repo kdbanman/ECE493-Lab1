@@ -14,8 +14,6 @@ public class GestureBuilder {
 
     private int touchSlop = 0;
 
-    private int concurrentTouchCount = 0;
-
     private float
             firstTouchStartX = 0,
             firstTouchStartY = 0,
@@ -39,21 +37,19 @@ public class GestureBuilder {
         switch (action) {
             case MotionEvent.ACTION_POINTER_DOWN:
             case MotionEvent.ACTION_DOWN:
-                if (concurrentTouchCount == 0) {
+                if (event.getPointerCount() == 1) {
                     firstTouchStartX = event.getX(0);
                     firstTouchStartY = event.getY(0);
 
-                    Log.d("GestureBuilder", String.format("POINTER ONE X = %.5f, Y = %.5f", firstTouchStartX, firstTouchStartY));
-                } else if (concurrentTouchCount == 1) {
+                    Log.d("GestureBuilder", String.format("POINTER ONE DOWN X = %.5f, Y = %.5f", firstTouchStartX, firstTouchStartY));
+                } else if (event.getPointerCount() == 2) {
                     secondTouchStartX = event.getX(1);
                     secondTouchStartY = event.getY(1);
 
                     pinchStartDistance = getPinchDistance(event);
 
-                    Log.d("GestureBuilder", String.format("POINTER TWO X = %.5f, Y = %.5f", secondTouchStartX, secondTouchStartY));
+                    Log.d("GestureBuilder", String.format("POINTER TWO DOWN X = %.5f, Y = %.5f", secondTouchStartX, secondTouchStartY));
                 }
-                concurrentTouchCount += 1;
-                Log.d("GestureBuilder", String.format("POINTER COUNT INCREASED TO %d", concurrentTouchCount));
 
                 break;
 
@@ -70,13 +66,14 @@ public class GestureBuilder {
                         finalGestureType = GestureType.PINCH;
                         finalGestureValue = getPinchDistance(event) - pinchStartDistance;
                     } else if (centreMotionExceedsSlopThreshold(event)) {
-                        // Touches are rotating about a centre that isn't moving much.
-                        Log.d("GestureBuilder", String.format("SCROLL: %.5f", getCentreMotion(event)));
+                        // Touches are moving together in some direction, but only execute on vertical motion.
+                        if (verticalMotionExceedsSlopThreshold(event)) {
+                            Log.d("GestureBuilder", String.format("VERTICAL_SCROLL: %.5f", getVerticalCentreMotion(event)));
 
-                        finalGestureType = GestureType.SCROLL;
-                        finalGestureValue = getCentreMotion(event);
+                            finalGestureType = GestureType.VERTICAL_SCROLL;
+                            finalGestureValue = getVerticalCentreMotion(event);
+                        }
                     } else {
-                        // Touches are moving together in a direction.
                         Log.d("GestureBuilder", String.format("ROTATE: %.5f", getRotationAngle(event)));
 
                         finalGestureType = GestureType.ROTATE;
@@ -122,11 +119,22 @@ public class GestureBuilder {
 
     private boolean centreMotionExceedsSlopThreshold(MotionEvent event) {
         if (event.getPointerCount() == 2) {
-
             float centreMotion = getCentreMotion(event);
 
             // Controlling centre of rotating fingers is hard.  Widen the slop threshold.
             if (centreMotion > touchSlop * 7.5) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private boolean verticalMotionExceedsSlopThreshold(MotionEvent event) {
+        if (event.getPointerCount() == 2) {
+            float verticalCentreMotion = getVerticalCentreMotion(event);
+
+            if (Math.abs(verticalCentreMotion) > touchSlop * 5) {
                 return true;
             }
         }
@@ -188,6 +196,18 @@ public class GestureBuilder {
         return 0;
     }
 
+    private float getVerticalCentreMotion(MotionEvent event) {
+        if (event.getPointerCount() == 2) {
+
+            float centreY = (event.getY(0) + event.getY(1)) / 2f;
+            float startCentreY = (firstTouchStartY + secondTouchStartY) / 2f;
+
+            return  startCentreY - centreY;
+        }
+
+        return 0;
+    }
+
 
 
     public void executeGesture() {
@@ -199,8 +219,6 @@ public class GestureBuilder {
     }
 
     public void reset() {
-        concurrentTouchCount = 0;
-
         firstTouchStartX = 0;
         firstTouchStartY = 0;
         secondTouchStartX = 0;
