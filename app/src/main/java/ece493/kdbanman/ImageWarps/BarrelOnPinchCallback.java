@@ -1,5 +1,7 @@
 package ece493.kdbanman.ImageWarps;
 
+import android.renderscript.RenderScript;
+
 import ece493.kdbanman.Gesture.GestureCallback;
 
 /**
@@ -7,11 +9,13 @@ import ece493.kdbanman.Gesture.GestureCallback;
  */
 public class BarrelOnPinchCallback implements GestureCallback {
 
+    private RenderScript renderScript;
+
     /**
      * @param pinchDelta Absolute value may be hundreds.  Positive for expansion pinch.
      */
     @Override
-    public void executeGesture(float pinchDelta) {
+    public void executeGesture(float pinchDelta, int[] argbPixels, int width, int height) {
 
     }
 }
