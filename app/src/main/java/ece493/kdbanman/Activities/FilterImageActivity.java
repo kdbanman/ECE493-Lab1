@@ -16,8 +16,8 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.ViewConfiguration;
 import android.view.ViewTreeObserver;
-import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
@@ -28,7 +28,10 @@ import android.widget.Toast;
 import java.io.IOException;
 import java.io.InputStream;
 
-import ece493.kdbanman.Model.FilterKernelType;
+import ece493.kdbanman.Activities.FilterImageControllers.CancelFilterOnClickListener;
+import ece493.kdbanman.Activities.FilterImageControllers.ChooseFilterOnItemSelectedListener;
+import ece493.kdbanman.Activities.FilterImageControllers.FilterImageOnClickListener;
+import ece493.kdbanman.Activities.FilterImageControllers.WarpImageOnTouchListener;
 import ece493.kdbanman.Model.Filterable;
 import ece493.kdbanman.Model.ImageFilter;
 import ece493.kdbanman.Model.ModelServer;
@@ -44,8 +47,9 @@ public class FilterImageActivity extends ObserverActivity {
     private TextView filterStatusTextView;
     private Button filterCancelButton;
 
-    private static final int REQUEST_CODE_IMAGE_URI = 0,
-        REQUEST_CODE_READ_STORAGE = 1;
+    private static final int
+            REQUEST_CODE_IMAGE_URI = 0,
+            REQUEST_CODE_READ_STORAGE = 1;
 
     private Filterable image;
     private ImageFilter imageFilter;
@@ -145,9 +149,10 @@ public class FilterImageActivity extends ObserverActivity {
     }
 
     private void initializeControllers() {
-        filterImageButton.setOnClickListener(new FilterImageOnClickListener());
-        filterCancelButton.setOnClickListener(new CancelFilterOnClickListener());
-        filterChooserSpinner.setOnItemSelectedListener(new ChooseFilterOnItemSelectedListener());
+        imageView.setOnTouchListener(new WarpImageOnTouchListener(ViewConfiguration.get(this).getScaledTouchSlop()));
+        filterImageButton.setOnClickListener(new FilterImageOnClickListener(imageFilter, image));
+        filterCancelButton.setOnClickListener(new CancelFilterOnClickListener(imageFilter));
+        filterChooserSpinner.setOnItemSelectedListener(new ChooseFilterOnItemSelectedListener(imageFilter));
     }
 
     private boolean modelInitialized() {
@@ -312,45 +317,4 @@ public class FilterImageActivity extends ObserverActivity {
         }
     }
 
-    private class FilterImageOnClickListener implements View.OnClickListener {
-        @Override
-        public void onClick(View v) {
-            if (imageFilter.isFilterRunning()) {
-                imageFilter.cancelBackgroundFilterTasks();
-            }
-
-            imageFilter.filterImageInBackground(image);
-        }
-    }
-
-    private class CancelFilterOnClickListener implements View.OnClickListener {
-        @Override
-        public void onClick(View v) {
-            if (imageFilter.isFilterRunning()) {
-                imageFilter.cancelBackgroundFilterTasks();
-            }
-        }
-    }
-
-    private class ChooseFilterOnItemSelectedListener implements AdapterView.OnItemSelectedListener {
-        @Override
-        public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-            switch (position) {
-                case (0):
-                    imageFilter.setKernelType(FilterKernelType.MEAN);
-                    break;
-                case (1):
-                    imageFilter.setKernelType(FilterKernelType.MEDIAN);
-                    break;
-                default:
-                    Toast.makeText(FilterImageActivity.this, R.string.error_unrecognized_filter_from_view, Toast.LENGTH_LONG).show();
-                    break;
-            }
-        }
-
-        @Override
-        public void onNothingSelected(AdapterView<?> parent) {
-            imageFilter.setKernelType(FilterKernelType.MEAN);
-        }
-    }
 }
