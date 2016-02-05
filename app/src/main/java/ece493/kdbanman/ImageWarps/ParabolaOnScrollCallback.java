@@ -11,7 +11,7 @@ public class ParabolaOnScrollCallback implements GestureCallback {
      * @param scrollDistance Absolute value may be hundreds.  Positive for upward scroll.
      */
     @Override
-    public void executeGesture(float scrollDistance, int[] argbPixels, int width, int height) {
+    public void executeGesture(float scrollDistance) {
         
     }
 }

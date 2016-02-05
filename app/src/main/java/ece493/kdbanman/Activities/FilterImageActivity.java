@@ -27,11 +27,16 @@ import android.widget.Toast;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.HashMap;
 
 import ece493.kdbanman.Activities.FilterImageControllers.CancelFilterOnClickListener;
 import ece493.kdbanman.Activities.FilterImageControllers.ChooseFilterOnItemSelectedListener;
 import ece493.kdbanman.Activities.FilterImageControllers.FilterImageOnClickListener;
 import ece493.kdbanman.Activities.FilterImageControllers.WarpImageOnTouchListener;
+import ece493.kdbanman.Gesture.GestureCallback;
+import ece493.kdbanman.Gesture.GestureType;
+import ece493.kdbanman.ImageWarps.BarrelOnPinchCallback;
+import ece493.kdbanman.MessageCallback;
 import ece493.kdbanman.Model.Filterable;
 import ece493.kdbanman.Model.ImageFilter;
 import ece493.kdbanman.Model.ModelServer;
@@ -149,10 +154,29 @@ public class FilterImageActivity extends ObserverActivity {
     }
 
     private void initializeControllers() {
-        imageView.setOnTouchListener(new WarpImageOnTouchListener(ViewConfiguration.get(this).getScaledTouchSlop()));
+
+        initializeTouchControllers();
         filterImageButton.setOnClickListener(new FilterImageOnClickListener(imageFilter, image));
         filterCancelButton.setOnClickListener(new CancelFilterOnClickListener(imageFilter));
         filterChooserSpinner.setOnItemSelectedListener(new ChooseFilterOnItemSelectedListener(imageFilter));
+    }
+
+    private void initializeTouchControllers() {
+        HashMap<GestureType, GestureCallback> callbacks = new HashMap<>();
+        callbacks.put(GestureType.PINCH, new BarrelOnPinchCallback(this, image));
+        //TODO scroll
+        //TODO rotation
+
+        int scaledTouchSlop = ViewConfiguration.get(this).getScaledTouchSlop();
+
+        MessageCallback onError = new MessageCallback() {
+            @Override
+            public void report(String message) {
+                Toast.makeText(FilterImageActivity.this, message, Toast.LENGTH_LONG).show();
+            }
+        };
+
+        imageView.setOnTouchListener(new WarpImageOnTouchListener(callbacks, onError, scaledTouchSlop));
     }
 
     private boolean modelInitialized() {

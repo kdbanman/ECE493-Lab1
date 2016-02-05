@@ -48,6 +48,13 @@ public class Filterable extends Observable {
     }
 
     /**
+     * @return A reference to the image within.  Be careful with this from other threads!
+     */
+    public Bitmap getImageReference() {
+        return image;
+    }
+
+    /**
      * @param maxHeight The maximum allowable height.
      * @param maxWidth The maximum allowable width.
      * @return A scaled *copy* of the image that obeys the passed max width and max height, but
@@ -207,5 +214,9 @@ public class Filterable extends Observable {
         int[] pixels = new int[image.getHeight() * image.getWidth()];
         image.getPixels(pixels, 0, image.getWidth(), 0, 0, image.getWidth(), image.getHeight());
         return pixels;
+    }
+
+    public Bitmap.Config getConfig() {
+        return image.getConfig();
     }
 }
