@@ -15,7 +15,7 @@ public class BarrelOnPinchCallback implements GestureCallback {
 
     private RenderScript renderScript;
     private Allocation inputAllocation, outputAllocation;
-    private ScriptC_barrelwarp barrelwarpScript;
+    private ScriptC_imagewarp imagewarpScript;
 
     private Filterable image;
 
@@ -34,21 +34,28 @@ public class BarrelOnPinchCallback implements GestureCallback {
             throw new IllegalArgumentException("Set image before executing gesture.");
         }
 
+        if (pinchDelta <= 0) {
+            // An inward pinch for the "zooming in" feel of barrel distortion is silly.  Don't do it
+            return;
+        }
+
         Bitmap outputBitmap = Bitmap.createBitmap(image.getWidth(), image.getHeight(), image.getConfig());
 
         inputAllocation = Allocation.createFromBitmap(renderScript, image.getImageReference());
         outputAllocation = Allocation.createFromBitmap(renderScript, outputBitmap);
 
-        barrelwarpScript = new ScriptC_barrelwarp(renderScript);
+        imagewarpScript = new ScriptC_imagewarp(renderScript);
 
-        barrelwarpScript.set_inputAllocation(inputAllocation);
-        barrelwarpScript.set_outputAllocation(outputAllocation);
-        barrelwarpScript.set_scriptContext(barrelwarpScript);
+        imagewarpScript.set_inputAllocation(inputAllocation);
+        imagewarpScript.set_outputAllocation(outputAllocation);
+        imagewarpScript.set_scriptContext(imagewarpScript);
 
-        barrelwarpScript.set_width(image.getWidth());
-        barrelwarpScript.set_height(image.getHeight());
+        imagewarpScript.set_width(image.getWidth());
+        imagewarpScript.set_height(image.getHeight());
 
-        barrelwarpScript.invoke_filter();
+        imagewarpScript.set_warpParameter(pinchDelta);
+
+        imagewarpScript.invoke_barrel_warp();
 
         outputAllocation.copyTo(outputBitmap);
 

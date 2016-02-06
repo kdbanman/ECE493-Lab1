@@ -12,6 +12,6 @@ public class ParabolaOnScrollCallback implements GestureCallback {
      */
     @Override
     public void executeGesture(float scrollDistance) {
-        
+
     }
 }

@@ -1,18 +1,15 @@
 package ece493.kdbanman.Activities.FilterImageControllers;
 
-import android.content.Context;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 
 import java.util.HashMap;
 
+import ece493.kdbanman.Gesture.Gesture;
 import ece493.kdbanman.Gesture.GestureBuilder;
 import ece493.kdbanman.Gesture.GestureCallback;
-import ece493.kdbanman.Gesture.GestureType;
-import ece493.kdbanman.ImageWarps.BarrelOnPinchCallback;
-import ece493.kdbanman.MessageCallback;
-import ece493.kdbanman.Model.Filterable;
+import ece493.kdbanman.Gesture.MotionType;
 
 /**
  * A touch listener class that detects touch gestures and applies image warps accordingly.
@@ -21,13 +18,16 @@ import ece493.kdbanman.Model.Filterable;
  */
 public class WarpImageOnTouchListener implements View.OnTouchListener {
 
-    GestureBuilder gestureBuilder;
+    private HashMap<MotionType, GestureCallback> callbacks;
 
-    MessageCallback errorReporter;
+    private int touchSlop;
+    private GestureBuilder gestureBuilder;
 
-    public WarpImageOnTouchListener(HashMap<GestureType, GestureCallback> callbacks, MessageCallback onError, int touchSlop) {
+    public WarpImageOnTouchListener(HashMap<MotionType, GestureCallback> callbacks, int touchSlop) {
+
+        this.callbacks = callbacks;
+        this.touchSlop = touchSlop;
         this.gestureBuilder = new GestureBuilder(touchSlop, callbacks);
-        this.errorReporter = onError;
     }
 
     @Override
@@ -36,15 +36,21 @@ public class WarpImageOnTouchListener implements View.OnTouchListener {
             int action = (event.getAction() & MotionEvent.ACTION_MASK);
 
             if (action == MotionEvent.ACTION_POINTER_UP || action == MotionEvent.ACTION_UP && event.getPointerCount() == 0) {
-                gestureBuilder.executeGesture();
-                gestureBuilder.reset();
+                Gesture gesture = gestureBuilder.buildGesture();
+                if (gesture != null) {
+                    gesture.execute();
+                }
+
+                gestureBuilder = new GestureBuilder(touchSlop, callbacks);
+
                 return true;
             }
 
             return gestureBuilder.addEvent(event);
+
         } catch (IllegalArgumentException e) {
-            errorReporter.report(e.getMessage());
-            gestureBuilder.reset();
+            Log.e("WarpImageListener", e.getMessage());
+            gestureBuilder = new GestureBuilder(touchSlop, callbacks);
             return true;
         }
     }

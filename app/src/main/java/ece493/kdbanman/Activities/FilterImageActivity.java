@@ -34,9 +34,8 @@ import ece493.kdbanman.Activities.FilterImageControllers.ChooseFilterOnItemSelec
 import ece493.kdbanman.Activities.FilterImageControllers.FilterImageOnClickListener;
 import ece493.kdbanman.Activities.FilterImageControllers.WarpImageOnTouchListener;
 import ece493.kdbanman.Gesture.GestureCallback;
-import ece493.kdbanman.Gesture.GestureType;
+import ece493.kdbanman.Gesture.MotionType;
 import ece493.kdbanman.ImageWarps.BarrelOnPinchCallback;
-import ece493.kdbanman.MessageCallback;
 import ece493.kdbanman.Model.Filterable;
 import ece493.kdbanman.Model.ImageFilter;
 import ece493.kdbanman.Model.ModelServer;
@@ -162,21 +161,14 @@ public class FilterImageActivity extends ObserverActivity {
     }
 
     private void initializeTouchControllers() {
-        HashMap<GestureType, GestureCallback> callbacks = new HashMap<>();
-        callbacks.put(GestureType.PINCH, new BarrelOnPinchCallback(this, image));
+        HashMap<MotionType, GestureCallback> callbacks = new HashMap<>();
+        callbacks.put(MotionType.PINCH, new BarrelOnPinchCallback(this, image));
         //TODO scroll
         //TODO rotation
 
         int scaledTouchSlop = ViewConfiguration.get(this).getScaledTouchSlop();
 
-        MessageCallback onError = new MessageCallback() {
-            @Override
-            public void report(String message) {
-                Toast.makeText(FilterImageActivity.this, message, Toast.LENGTH_LONG).show();
-            }
-        };
-
-        imageView.setOnTouchListener(new WarpImageOnTouchListener(callbacks, onError, scaledTouchSlop));
+        imageView.setOnTouchListener(new WarpImageOnTouchListener(callbacks, scaledTouchSlop));
     }
 
     private boolean modelInitialized() {

@@ -6,11 +6,14 @@ import android.view.MotionEvent;
 import java.util.HashMap;
 
 /**
+ * Builder pattern frontend to the Gesture class:
+ * Construct the builder, add events, build the gesture.
+ *
  * Created by kdban on 2/5/2016.
  */
 public class GestureBuilder {
 
-    HashMap<GestureType, GestureCallback> callbacks;
+    HashMap<MotionType, GestureCallback> callbacks;
 
     private int touchSlop = 0;
 
@@ -22,63 +25,32 @@ public class GestureBuilder {
             pinchStartDistance = 0;
 
     private float finalGestureValue = 0;
-    private GestureType finalGestureType = GestureType.PINCH;
+    private MotionType finalGestureType = MotionType.PINCH;
 
-    public GestureBuilder(int touchSlop, HashMap<GestureType, GestureCallback> callbacks) {
+    /**
+     * @param touchSlop The threshold for movement under which gestures should be ignored.
+     * @param callbacks Callbacks for each type of movement.
+     */
+    public GestureBuilder(int touchSlop, HashMap<MotionType, GestureCallback> callbacks) {
         this.touchSlop = touchSlop;
 
         this.callbacks = callbacks;
     }
 
     public boolean addEvent(MotionEvent event) {
-
         int action = (event.getAction() & MotionEvent.ACTION_MASK);
 
         switch (action) {
             case MotionEvent.ACTION_POINTER_DOWN:
             case MotionEvent.ACTION_DOWN:
-                if (event.getPointerCount() == 1) {
-                    firstTouchStartX = event.getX(0);
-                    firstTouchStartY = event.getY(0);
-
-                    Log.d("GestureBuilder", String.format("POINTER ONE DOWN X = %.5f, Y = %.5f", firstTouchStartX, firstTouchStartY));
-                } else if (event.getPointerCount() == 2) {
-                    secondTouchStartX = event.getX(1);
-                    secondTouchStartY = event.getY(1);
-
-                    pinchStartDistance = getPinchDistance(event);
-
-                    Log.d("GestureBuilder", String.format("POINTER TWO DOWN X = %.5f, Y = %.5f", secondTouchStartX, secondTouchStartY));
-                }
-
+                addTouchDownEvent(event);
                 break;
 
             case MotionEvent.ACTION_MOVE:
                 boolean firstTouchMoving = motionExceedsSlopThreshold(event, 0, firstTouchStartX, firstTouchStartY);
                 boolean secondTouchMoving = motionExceedsSlopThreshold(event, 1, secondTouchStartX, secondTouchStartY);
-
                 if (firstTouchMoving && secondTouchMoving) {
-                    // First detect pinch, then detect scroll.  Final possibility is rotation.
-                    if (pinchExceedsSlopThreshold(event)) {
-                        // Touches are pinching together or apart.
-                        Log.d("GestureBuilder", String.format("PINCH: %.5f", getPinchDistance(event) - pinchStartDistance));
-
-                        finalGestureType = GestureType.PINCH;
-                        finalGestureValue = getPinchDistance(event) - pinchStartDistance;
-                    } else if (centreMotionExceedsSlopThreshold(event)) {
-                        // Touches are moving together in some direction, but only execute on vertical motion.
-                        if (verticalMotionExceedsSlopThreshold(event)) {
-                            Log.d("GestureBuilder", String.format("VERTICAL_SCROLL: %.5f", getVerticalCentreMotion(event)));
-
-                            finalGestureType = GestureType.VERTICAL_SCROLL;
-                            finalGestureValue = getVerticalCentreMotion(event);
-                        }
-                    } else {
-                        Log.d("GestureBuilder", String.format("ROTATE: %.5f", getRotationAngle(event)));
-
-                        finalGestureType = GestureType.ROTATE;
-                        finalGestureValue = getRotationAngle(event);
-                    }
+                    addDoubleTouchMoveEvent(event);
                 }
                 break;
         }
@@ -86,8 +58,62 @@ public class GestureBuilder {
         return true;
     }
 
+    public Gesture buildGesture() {
+        Log.d("GestureBuilder", String.format("BUILDING GESTURE %s WITH VALUE %.5f", finalGestureType, finalGestureValue));
+
+        if (callbacks != null && callbacks.containsKey(finalGestureType)) {
+            return new Gesture(finalGestureValue, callbacks.get(finalGestureType));
+        }
+
+        return null;
+    }
+
+    // END PUBLIC METHODS
+    ////////////////
+
+
+    private void addTouchDownEvent(MotionEvent event) {
+        if (event.getPointerCount() == 1) {
+            firstTouchStartX = event.getX(0);
+            firstTouchStartY = event.getY(0);
+
+            Log.d("GestureBuilder", String.format("POINTER ONE DOWN X = %.5f, Y = %.5f", firstTouchStartX, firstTouchStartY));
+        } else if (event.getPointerCount() == 2) {
+            secondTouchStartX = event.getX(1);
+            secondTouchStartY = event.getY(1);
+
+            pinchStartDistance = getPinchDistance(event);
+
+            Log.d("GestureBuilder", String.format("POINTER TWO DOWN X = %.5f, Y = %.5f", secondTouchStartX, secondTouchStartY));
+        }
+    }
+
+    private void addDoubleTouchMoveEvent(MotionEvent event) {
+        // First detect pinch, then detect scroll.  Final possibility is rotation.
+        if (pinchExceedsSlopThreshold(event)) {
+            // Touches are pinching together or apart.
+            Log.d("GestureBuilder", String.format("PINCH: %.5f", getPinchDistance(event) - pinchStartDistance));
+
+            finalGestureType = MotionType.PINCH;
+            finalGestureValue = getPinchDistance(event) - pinchStartDistance;
+        } else if (centreMotionExceedsSlopThreshold(event)) {
+            // Touches are moving together in some direction, but only execute on vertical motion.
+            if (verticalMotionExceedsSlopThreshold(event)) {
+                Log.d("GestureBuilder", String.format("VERTICAL_SCROLL: %.5f", getVerticalCentreMotion(event)));
+
+                finalGestureType = MotionType.VERTICAL_SCROLL;
+                finalGestureValue = getVerticalCentreMotion(event);
+            }
+        } else {
+            Log.d("GestureBuilder", String.format("ROTATE: %.5f", getRotationAngle(event)));
+
+            finalGestureType = MotionType.ROTATE;
+            finalGestureValue = getRotationAngle(event);
+        }
+    }
+
     ///////
-    // MOTION SLOP DETECTORS
+    // MOTION SLOP THRESHOLD DETECTORS
     ///////
 
 
@@ -206,25 +232,5 @@ public class GestureBuilder {
         }
 
         return 0;
-    }
-
-
-
-    public void executeGesture() {
-        Log.d("GestureBuilder", String.format("EXECUTING GESTURE %s WITH VALUE %.5f", finalGestureType, finalGestureValue));
-
-        if (callbacks != null && callbacks.containsKey(finalGestureType)) {
-            callbacks.get(finalGestureType).executeGesture(finalGestureValue);
-        }
-    }
-
-    public void reset() {
-        firstTouchStartX = 0;
-        firstTouchStartY = 0;
-        secondTouchStartX = 0;
-        secondTouchStartY = 0;
-        pinchStartDistance = 0;
-
-        finalGestureValue = 0;
     }
 }
