@@ -1,17 +1,20 @@
 package ece493.kdbanman.ImageWarps;
 
-import ece493.kdbanman.Gesture.GestureCallback;
+import android.content.Context;
+
+import ece493.kdbanman.Model.Filterable;
 
 /**
  * Created by kdban on 2/5/2016.
  */
-public class SwirlOnRotateCallback implements GestureCallback {
+public class SwirlOnRotateCallback extends RenderscriptGestureCallback {
 
-    /**
-     * @param radianAngle Angle of rotation sweep in radians.
-     */
+    public SwirlOnRotateCallback(Context context, Filterable image) {
+        super(image, context);
+    }
+
     @Override
-    public void executeGesture(float radianAngle) {
-
+    protected void invokeRenderscriptWarp(ScriptC_imagewarp imagewarpScript, float gestureParam) {
+        imagewarpScript.invoke_swirl_warp();
     }
 }

@@ -4,6 +4,7 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.renderscript.Allocation;
 import android.renderscript.RenderScript;
+import android.util.Log;
 
 import ece493.kdbanman.Gesture.GestureCallback;
 import ece493.kdbanman.Model.Filterable;
@@ -24,17 +25,12 @@ abstract class RenderscriptGestureCallback implements GestureCallback {
     }
 
     /**
-     * @param pinchDelta Absolute value may be hundreds.  Positive for expansion pinch.
+     * @param gestureParam Absolute value may be hundreds.  Positive for expansion pinch.
      */
     @Override
-    public void executeGesture(float pinchDelta) {
+    public void executeGesture(float gestureParam) {
         if (!image.hasImage()) {
             throw new IllegalArgumentException("Set image before executing gesture.");
-        }
-
-        if (pinchDelta <= 0) {
-            // An inward pinch for the "zooming in" feel of barrel distortion is silly.  Don't do it
-            return;
         }
 
         Bitmap outputBitmap = Bitmap.createBitmap(image.getWidth(), image.getHeight(), image.getConfig());
@@ -51,14 +47,22 @@ abstract class RenderscriptGestureCallback implements GestureCallback {
         imagewarpScript.set_width(image.getWidth());
         imagewarpScript.set_height(image.getHeight());
 
-        imagewarpScript.set_warpParameter(pinchDelta);
+        imagewarpScript.set_warpParameter(gestureParam);
 
-        invokeRenderscriptWarp(imagewarpScript);
+        try {
+            invokeRenderscriptWarp(imagewarpScript, gestureParam);
+        } catch (IllegalArgumentException e) {
+            Log.i("invokeRenderscriptWarp", e.getMessage());
+            return;
+        } catch (Exception e) {
+            Log.w("invokeRenderscriptWarp", e.getMessage());
+            return;
+        }
 
         outputAllocation.copyTo(outputBitmap);
 
         image.setImage(outputBitmap);
     }
 
-    protected abstract void invokeRenderscriptWarp(ScriptC_imagewarp imagewarpScript);
+    protected abstract void invokeRenderscriptWarp(ScriptC_imagewarp imagewarpScript, float gestureParam);
 }

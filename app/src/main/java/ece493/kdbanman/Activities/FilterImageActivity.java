@@ -36,6 +36,8 @@ import ece493.kdbanman.Activities.FilterImageControllers.WarpImageOnTouchListene
 import ece493.kdbanman.Gesture.GestureCallback;
 import ece493.kdbanman.Gesture.MotionType;
 import ece493.kdbanman.ImageWarps.FisheyeOnPinchCallback;
+import ece493.kdbanman.ImageWarps.ParabolaOnScrollCallback;
+import ece493.kdbanman.ImageWarps.SwirlOnRotateCallback;
 import ece493.kdbanman.Model.Filterable;
 import ece493.kdbanman.Model.ImageFilter;
 import ece493.kdbanman.Model.ModelServer;
@@ -163,8 +165,8 @@ public class FilterImageActivity extends ObserverActivity {
     private void initializeTouchControllers() {
         HashMap<MotionType, GestureCallback> callbacks = new HashMap<>();
         callbacks.put(MotionType.PINCH, new FisheyeOnPinchCallback(this, image));
-        //TODO scroll
-        //TODO rotation
+        callbacks.put(MotionType.VERTICAL_SCROLL, new ParabolaOnScrollCallback(this, image));
+        callbacks.put(MotionType.ROTATE, new SwirlOnRotateCallback(this, image));
 
         int scaledTouchSlop = ViewConfiguration.get(this).getScaledTouchSlop();
 
@@ -309,7 +311,7 @@ public class FilterImageActivity extends ObserverActivity {
 
 
     // ======================
-    // Controller methods and classes
+    // Controller methods
 
     private void setNewBitmap(Bitmap newBitmap) {
         if (newBitmap == null) {
