@@ -2,7 +2,7 @@
 #pragma rs java_package_name(ece493.kdbanman.ImageWarps) )
 
 #define PARABOLA_WARP (0)
-#define BARREL_WARP   (1)
+#define FISHEYE_WARP   (1)
 #define SWIRL_WARP    (2)
 
 rs_allocation inputAllocation;
@@ -52,7 +52,7 @@ static float2 parabolaWarp(uint32_t targetX, uint32_t targetY) {
     return source;
 }
 
-static float2 barrelWarp(uint32_t targetX, uint32_t targetY) {
+static float2 fisheyeWarp(uint32_t targetX, uint32_t targetY) {
     float2 source, centre, target, centreToTarget;
 
     centre.x = (float)width / 2;
@@ -65,10 +65,11 @@ static float2 barrelWarp(uint32_t targetX, uint32_t targetY) {
     centreToTarget.y = target.y - centre.y;
 
     float centreToTargetLength = sqrt(centreToTarget.x * centreToTarget.x + centreToTarget.y * centreToTarget.y);
+    float diagonalLength = sqrt((float)height * height + (float)width * width);
 
-    float sourceFraction = 0.6333 - 0.00133 * warpParameter * min(height, width) / 2.f / centreToTargetLength;
+    float sourceFraction = 1.1 - 0.0005 * warpParameter * diagonalLength / 2.f / centreToTargetLength;
+    sourceFraction = max(sourceFraction, 0.3);
     sourceFraction = min(sourceFraction, 1.0);
-    sourceFraction = max(sourceFraction, 0.1);
 
     if (warpParameter < 0)
         sourceFraction = -1 * sourceFraction;
@@ -121,8 +122,8 @@ void root(const uchar4 *inputVector, uchar4 *outputVector, const void *userData,
         case PARABOLA_WARP:
                 sourceCoord = parabolaWarp(x, y);
                 break;
-        case BARREL_WARP:
-                sourceCoord = barrelWarp(x, y);
+        case FISHEYE_WARP:
+                sourceCoord = fisheyeWarp(x, y);
                 break;
         case SWIRL_WARP:
                 sourceCoord = swirlWarp(x, y);
@@ -137,8 +138,8 @@ void parabola_warp() {
     rsForEach(scriptContext, inputAllocation, outputAllocation);
 }
 
-void barrel_warp() {
-    warpType = BARREL_WARP;
+void fisheye_warp() {
+    warpType = FISHEYE_WARP;
     rsForEach(scriptContext, inputAllocation, outputAllocation);
 }
 

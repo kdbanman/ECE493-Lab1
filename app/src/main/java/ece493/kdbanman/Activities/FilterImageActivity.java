@@ -35,7 +35,7 @@ import ece493.kdbanman.Activities.FilterImageControllers.FilterImageOnClickListe
 import ece493.kdbanman.Activities.FilterImageControllers.WarpImageOnTouchListener;
 import ece493.kdbanman.Gesture.GestureCallback;
 import ece493.kdbanman.Gesture.MotionType;
-import ece493.kdbanman.ImageWarps.BarrelOnPinchCallback;
+import ece493.kdbanman.ImageWarps.FisheyeOnPinchCallback;
 import ece493.kdbanman.Model.Filterable;
 import ece493.kdbanman.Model.ImageFilter;
 import ece493.kdbanman.Model.ModelServer;
@@ -162,7 +162,7 @@ public class FilterImageActivity extends ObserverActivity {
 
     private void initializeTouchControllers() {
         HashMap<MotionType, GestureCallback> callbacks = new HashMap<>();
-        callbacks.put(MotionType.PINCH, new BarrelOnPinchCallback(this, image));
+        callbacks.put(MotionType.PINCH, new FisheyeOnPinchCallback(this, image));
         //TODO scroll
         //TODO rotation
 
