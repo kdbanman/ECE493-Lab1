@@ -24,6 +24,24 @@ static float modulusClamp_float(float value, float max) {
     return value;
 }
 
+static float2 toFloat(uint32_t x, uint32_t y) {
+    float2 floated;
+
+    floated.x = (float)x;
+    floated.y = (float)y;
+
+    return floated;
+}
+
+static float2 difference(float2 first, float2 second) {
+    float2 diff;
+
+    diff.x = first.x - second.x;
+    diff.y = first.y - second.y;
+
+    return diff;
+}
+
 static float4 getRGBA(rs_allocation allocation, float floatX, float floatY) {
     uint32_t x = (uint32_t)modulusClamp_float(floatX, (float)width);
     uint32_t y = (uint32_t)modulusClamp_float(floatY, (float)height);
@@ -43,6 +61,19 @@ static float4 elementwiseInterpolate(float4 start,  float4 finish,  float delta)
     return interpolated;
 }
 
+static float2 getImageCentre() {
+    float2 centre;
+
+    centre.x = (float)width / 2;
+    centre.y = (float)height / 2;
+
+    return centre;
+}
+
+static float getImageRadius() {
+    return sqrt((float)height * height + (float)width * width) / 2.f;
+}
+
 static float2 parabolaWarp(uint32_t targetX, uint32_t targetY) {
     float2 source;
 
@@ -53,27 +84,22 @@ static float2 parabolaWarp(uint32_t targetX, uint32_t targetY) {
 }
 
 static float2 fisheyeWarp(uint32_t targetX, uint32_t targetY) {
-    float2 source, centre, target, centreToTarget;
+    float2 centre = getImageCentre();
+    float2 target = toFloat(targetX, targetY);
 
-    centre.x = (float)width / 2;
-    centre.y = (float)height / 2;
+    float2 centreToTarget = difference(target, centre);
+    float centreToTargetLength = length(centreToTarget);
 
-    target.x = (float)targetX;
-    target.y = (float)targetY;
+    float radiusLength = getImageRadius();
 
-    centreToTarget.x = target.x - centre.x;
-    centreToTarget.y = target.y - centre.y;
-
-    float centreToTargetLength = sqrt(centreToTarget.x * centreToTarget.x + centreToTarget.y * centreToTarget.y);
-    float diagonalLength = sqrt((float)height * height + (float)width * width);
-
-    float sourceFraction = 1.1 - 0.0005 * warpParameter * diagonalLength / 2.f / centreToTargetLength;
+    float sourceFraction = 1.1 - 0.0005 * warpParameter * radiusLength / centreToTargetLength;
     sourceFraction = max(sourceFraction, 0.3);
     sourceFraction = min(sourceFraction, 1.0);
 
     if (warpParameter < 0)
         sourceFraction = -1 * sourceFraction;
 
+    float2 source;
     source.x = centre.x + centreToTarget.x * sourceFraction;
     source.y = centre.y + centreToTarget.y * sourceFraction;
 
@@ -83,8 +109,19 @@ static float2 fisheyeWarp(uint32_t targetX, uint32_t targetY) {
 static float2 swirlWarp(uint32_t targetX, uint32_t targetY) {
     float2 source;
 
-    source.x = targetX;
-    source.y = targetY + (targetX - width / 2) * (targetX - width / 2) * warpParameter * 0.000003;
+    float2 target = toFloat(targetX, targetY);
+    float2 centre = getImageCentre();
+
+    float2 centreToTarget = difference(target, centre);
+    float targetRadius = length(centreToTarget);
+    float targetAngle = atan2(centreToTarget.y, centreToTarget.x);
+
+    float imageRadius = getImageRadius();
+
+    float sourceAngle = targetAngle + (1.0 - targetRadius / imageRadius) * warpParameter * -1.0;
+
+    source.x = targetRadius * cos(sourceAngle) + width / 2;
+    source.y = targetRadius * sin(sourceAngle) + height / 2;
 
     return source;
 }

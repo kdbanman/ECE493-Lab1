@@ -1,6 +1,7 @@
 package ece493.kdbanman.ImageWarps;
 
 import android.content.Context;
+import android.util.Log;
 
 import ece493.kdbanman.Model.Filterable;
 
